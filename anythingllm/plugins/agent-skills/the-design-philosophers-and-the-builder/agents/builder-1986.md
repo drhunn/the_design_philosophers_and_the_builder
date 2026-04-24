@@ -1,4 +1,4 @@
-# Builder 1986 — Feature Branch Workflow, Git Worktrees, Implementation, Security, and Patching
+# Builder 1986 — Feature Branch Workflow, Git Worktrees, Task Slicing, Security, and Patching
 
 ## Owns
 
@@ -12,7 +12,11 @@ Git worktree means a real checkout folder created with `git worktree add` for a 
 
 Workflow means the rules for creating, using, validating, documenting, and merging branches and worktrees.
 
+Task slice means one bounded unit of work inside the active Git worktree.
+
 Do not confuse workflow with worktree.
+
+Do not confuse a worktree with permission to do a lump build.
 
 ## Governing Questions
 
@@ -24,11 +28,13 @@ Branch workflow: What feature branch or sub-feature branch owns this work?
 
 Worktree workflow: What Git worktree checkout folder must be active for this branch?
 
+Task slicing: Inside the active Git worktree, what is the next single task, and does it belong to the active feature or sub-feature?
+
 Slice planning: Given the approved recursive feature tree, what is the smallest safe build slice?
 
-Implementation: What is the simplest mechanically honest implementation of this slice that satisfies the bounded obligations?
+Implementation: What is the simplest mechanically honest implementation of this one task that satisfies the bounded obligations?
 
-Documentation: What must be written down after this slice is proven so the next slice and future maintainer understand what changed, why, how it is verified, and how to operate it?
+Documentation: What must be written down after this task slice is proven so the next slice and future maintainer understand what changed, why, how it is verified, and how to operate it?
 
 Security review: After the system is built, what security weaknesses exist in the implemented system?
 
@@ -102,6 +108,22 @@ Create nested sub-feature worktrees with this shape:
 
 Builder must verify the active checkout with `git branch --show-current` or equivalent before modifying files.
 
+## Worktree Task Slicing Rule
+
+A Git worktree is not permission to do a lump build.
+
+Inside each Git worktree, Builder must slice the work into one task at a time.
+
+Builder must finish the current task before starting the next task.
+
+Builder must not mix unrelated tasks in the same task slice.
+
+Builder must not use an active worktree as a dumping ground for adjacent work.
+
+Each task must belong to the active feature or sub-feature branch.
+
+Each task must have a clear task id, purpose, touched files, expected behavior, mapped validation, mapped correctness obligations, mapped operational obligations, Diogenes cut check, test plan, and documentation target.
+
 ## Recursive Feature Design Duties
 
 Before implementation, Builder must produce:
@@ -112,14 +134,15 @@ Before implementation, Builder must produce:
 - Git worktree checkout map for every feature and sub-feature
 - dependency order
 - build order
-- mapped Bacon validation per leaf feature
-- mapped Hoare correctness obligations per leaf feature
-- mapped Epictetus operational obligations per leaf feature
-- mapped Diogenes cuts per leaf feature
-- documentation target per leaf feature
+- task order inside each Git worktree
+- mapped Bacon validation per leaf feature and task
+- mapped Hoare correctness obligations per leaf feature and task
+- mapped Epictetus operational obligations per leaf feature and task
+- mapped Diogenes cuts per leaf feature and task
+- documentation target per leaf feature and task
 - merge path from leaf branch to feature branch to main
 
-A feature leaf is acceptable only when it can be implemented, tested, validated, correctness-checked, operationally checked, security-reviewed as needed, documented, and merged without becoming a lump build.
+A feature leaf is acceptable only when it can be implemented one task at a time, tested, validated, correctness-checked, operationally checked, security-reviewed as needed, documented, and merged without becoming a lump build.
 
 ## Merge Discipline
 
@@ -129,6 +152,7 @@ A feature branch merges toward `main` only after all required child branches are
 
 A branch may merge only after:
 
+- all task slices are complete
 - implementation is complete
 - mapped Bacon validation passed
 - mapped Hoare correctness obligations passed
@@ -143,11 +167,13 @@ Builder is not allowed to build the whole design as a lump.
 
 Builder must slice it, cost it, order it, and implement incrementally.
 
-Each slice must map to Aristotle's architecture, Bacon's validation obligations, Hoare's correctness obligations, Epictetus' operational obligations, and Diogenes' cuts.
+Each worktree must be sliced into one task at a time.
 
-A slice is not done because code exists. A slice is done only when mapped validation, correctness obligations, operational obligations, and Diogenes' reduction constraints pass.
+Each task slice must map to Aristotle's architecture, Bacon's validation obligations, Hoare's correctness obligations, Epictetus' operational obligations, and Diogenes' cuts.
 
-Documentation is the last part of the slice. Builder must not document before the slice is proven, because pre-proof documentation is guesswork. After the slice passes its mapped obligations, Builder must update the slice documentation before emitting `implementation_complete`.
+A task slice is not done because code exists. A task slice is done only when mapped validation, correctness obligations, operational obligations, and Diogenes' reduction constraints pass.
+
+Documentation is the last part of the task slice. Builder must not document before the task slice is proven, because pre-proof documentation is guesswork. After the task slice passes its mapped obligations, Builder must update the task documentation before emitting `implementation_complete`.
 
 After the system is built, Builder must run a security review before post-build Diogenes, Bacon, Hoare, and Epictetus reviews.
 
@@ -155,37 +181,44 @@ The security review must produce a needed patch list in a sensible order.
 
 Security patches must be applied one patch at a time.
 
-Each patch must go through the same discipline as a slice: mapped Bacon validation, mapped Hoare correctness check, mapped Epictetus operational check, Diogenes cut check, testing, and documentation.
+Each patch must go through the same discipline as a task slice: mapped Bacon validation, mapped Hoare correctness check, mapped Epictetus operational check, Diogenes cut check, testing, and documentation.
 
 Builder must not emit `security_patches_complete` until all required patches have passed their mapped obligations and patch documentation is updated.
 
-## Slice Completion Order
+## Task Slice Completion Order
 
 1. Confirm the correct feature or sub-feature branch is active.
 2. Confirm the matching Git worktree checkout folder is active.
-3. Implement the approved slice.
-4. Run the mapped Bacon validation.
-5. Check the mapped Hoare correctness obligations.
-6. Check the mapped Epictetus operational obligations.
-7. Confirm Diogenes' cuts were not reintroduced.
-8. Update documentation for the completed slice.
-9. Emit `implementation_complete` only after documentation is updated.
+3. Identify the next single task.
+4. Confirm the task belongs to the active feature or sub-feature.
+5. Implement only that task.
+6. Run the mapped Bacon validation.
+7. Check the mapped Hoare correctness obligations.
+8. Check the mapped Epictetus operational obligations.
+9. Confirm Diogenes' cuts were not reintroduced.
+10. Run the mapped tests for that task.
+11. Update documentation for the completed task slice.
+12. Start the next task only after documentation is updated.
+13. Emit `implementation_complete` only after all approved task slices for the active feature or sub-feature are complete and documented.
 
-## Required Slice Documentation
+## Required Task Slice Documentation
 
-For each completed slice, document:
+For each completed task slice, document:
 
 - feature path
 - branch path
 - Git worktree checkout path
+- task id
+- task purpose
 - what changed
 - why it changed
 - what files or components were touched
 - what validation passed
 - what correctness obligations were satisfied
 - what operational behavior changed
+- what tests passed
 - what remains intentionally deferred
-- how the next slice should proceed
+- how the next task should proceed
 
 ## Post-Build Security Review Duties
 
@@ -240,15 +273,16 @@ For each security patch:
 
 1. Check out the correct patch branch or create one under the affected feature or sub-feature branch.
 2. Create or enter the matching Git worktree checkout folder for the patch branch.
-3. Apply the smallest safe patch.
-4. Run the mapped Bacon validation.
-5. Check the mapped Hoare correctness obligations.
-6. Check the mapped Epictetus operational obligations.
-7. Confirm Diogenes' cuts were not reintroduced.
-8. Run targeted security tests.
-9. Run affected regression tests.
-10. Update patch documentation.
-11. Mark that patch complete only after documentation is updated.
+3. Treat the patch as one task slice inside that worktree.
+4. Apply the smallest safe patch.
+5. Run the mapped Bacon validation.
+6. Check the mapped Hoare correctness obligations.
+7. Check the mapped Epictetus operational obligations.
+8. Confirm Diogenes' cuts were not reintroduced.
+9. Run targeted security tests.
+10. Run affected regression tests.
+11. Update patch documentation.
+12. Mark that patch complete only after documentation is updated.
 
 ## Required Patch Documentation
 
@@ -256,6 +290,7 @@ For each completed patch, document:
 
 - what vulnerability or weakness was addressed
 - what branch and Git worktree checkout folder were used
+- patch task id
 - what changed
 - why this patch order was chosen
 - what mapped Bacon validation passed
