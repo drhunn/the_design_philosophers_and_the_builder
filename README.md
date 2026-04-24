@@ -1,6 +1,6 @@
 # The Design Philosophers and the Builder
 
-A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, lump-build implementation, missing Feature Branch Workflow, loose worktree task slicing, or loose security patching.
+A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, lump-build implementation, invalid Git branch refs, nested Git worktrees, loose worktree task slicing, or loose patching.
 
 This repository packages the same workflow for three runtimes:
 
@@ -79,20 +79,20 @@ The AnythingLLM state machine is embedded in `handler.js` so the plugin does not
 1. Socrates bounds the real problem.
 2. Plato defines the scoped ideal and hard product constraints.
 3. Aristotle derives the structure.
-4. Bacon defines empirical proof obligations.
+4. Bacon defines proof obligations.
 5. Hoare defines correctness obligations.
 6. Epictetus defines operational resilience obligations.
 7. Diogenes cuts excess before build.
 8. Builder 1986 creates or initializes the GitHub repository.
 9. Builder 1986 recursively identifies features and sub-features.
-10. Builder 1986 creates matching branches and Git worktree checkout folders for the Feature Branch Workflow.
+10. Builder 1986 creates collision-free branches and flat Git worktree checkout folders for the Feature Branch Workflow.
 11. Builder 1986 slices each Git worktree into one task at a time.
-12. Builder 1986 implements, verifies, tests, and documents each task slice before starting the next task.
+12. Builder 1986 implements, validates, checks, tests, and documents each task slice before starting the next task.
 13. Builder 1986 performs a post-build security review.
-14. Builder 1986 creates a needed security patch list in sensible order.
-15. Builder 1986 patches one patch-task at a time, and each patch-task must pass Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, testing, and documentation before the next patch starts.
-16. Diogenes cuts excess after security patching.
-17. Bacon verifies empirical evidence.
+14. Builder 1986 creates a needed patch list in sensible order.
+15. Builder 1986 patches one patch-task at a time, and each patch-task must pass Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, targeted tests, affected regression tests, and documentation before the next patch starts.
+16. Diogenes cuts excess after patching.
+17. Bacon verifies evidence.
 18. Hoare verifies correctness.
 19. Epictetus verifies resilience.
 20. The parent admits only if the state machine held.
@@ -106,30 +106,60 @@ Builder must:
 1. Create or initialize the GitHub repository.
 2. Identify every feature.
 3. Recursively identify and list sub-features for each feature.
-4. Create a branch for each feature.
-5. Create a sub-branch for each sub-feature.
-6. Create a Git worktree checkout folder for each feature branch.
-7. Create a Git worktree checkout folder for each sub-feature branch.
-8. Use the branches and Git worktree checkout folders to create the Feature Branch Workflow.
-9. Use the correct Feature Branch Workflow when working on the project.
+4. Create a collision-free branch for each feature.
+5. Create a collision-free branch for each sub-feature.
+6. Create flat sibling Git worktree checkout folders for each feature and sub-feature branch.
+7. Use the branches and Git worktree checkout folders to create the Feature Branch Workflow.
+8. Use the correct Feature Branch Workflow when working on the project.
 
-Branch pattern:
+## Branch Naming Rule
+
+Do not create parent and child refs in the same Git namespace. Git cannot safely hold both `feature/foo` and `feature/foo/bar` as branches.
+
+Use flat branch names after a top-level namespace:
 
 ```text
 feature/<feature-slug>
-feature/<feature-slug>/<sub-feature-slug>
-feature/<feature-slug>/<sub-feature-slug>/<nested-sub-feature-slug>
+subfeature/<feature-slug>--<sub-feature-path-slug>
+task/<feature-slug>--<sub-feature-path-slug>--<task-slug>
+patch/<feature-slug>--<sub-feature-path-slug>--<patch-id>
 ```
 
-Git worktree checkout pattern:
+Examples:
 
 ```text
-../worktrees/<repo-slug>/<feature-slug>/
-../worktrees/<repo-slug>/<feature-slug>/<sub-feature-slug>/
-../worktrees/<repo-slug>/<feature-slug>/<sub-feature-slug>/<nested-sub-feature-slug>/
+feature/state-machine
+subfeature/state-machine--transition-table
+subfeature/state-machine--transition-table--guard-checks
+task/state-machine--transition-table--guard-checks--reject-invalid-transition
+patch/state-machine--transition-table--guard-checks--P001
 ```
 
-Builder must not code directly on `main`, skip branches, skip Git worktrees, or flatten the recursive feature tree for convenience.
+Builder must not code directly on `main`, skip branches, or flatten the recursive feature tree for convenience.
+
+## Git Worktree Checkout Rule
+
+Do not nest Git worktrees inside other Git worktrees.
+
+Use flat sibling checkout folders:
+
+```text
+../worktrees/<repo-slug>/feature--<feature-slug>/
+../worktrees/<repo-slug>/subfeature--<feature-slug>--<sub-feature-path-slug>/
+../worktrees/<repo-slug>/task--<feature-slug>--<sub-feature-path-slug>--<task-slug>/
+../worktrees/<repo-slug>/patch--<feature-slug>--<sub-feature-path-slug>--<patch-id>/
+```
+
+Command shape:
+
+```text
+git worktree add ../worktrees/<repo-slug>/feature--<feature-slug> feature/<feature-slug>
+git worktree add ../worktrees/<repo-slug>/subfeature--<feature-slug>--<sub-feature-path-slug> subfeature/<feature-slug>--<sub-feature-path-slug>
+git worktree add ../worktrees/<repo-slug>/task--<feature-slug>--<sub-feature-path-slug>--<task-slug> task/<feature-slug>--<sub-feature-path-slug>--<task-slug>
+git worktree add ../worktrees/<repo-slug>/patch--<feature-slug>--<sub-feature-path-slug>--<patch-id> patch/<feature-slug>--<sub-feature-path-slug>--<patch-id>
+```
+
+Builder must verify the active checkout with `git branch --show-current` or equivalent before modifying files.
 
 ## Workflow vs. Git Worktree
 
@@ -141,6 +171,8 @@ Branch means the Git history line.
 
 Task slice means one bounded unit of work inside the active Git worktree.
 
+Patch task means one bounded corrective or security patch handled as one task slice inside the correct Git worktree.
+
 Builder must not confuse these terms.
 
 ## Builder Worktree Task Slicing Rule
@@ -151,7 +183,7 @@ Inside each Git worktree, Builder must slice work into one task at a time.
 
 Each task must be completed in this order:
 
-1. Confirm the correct feature or sub-feature branch is active.
+1. Confirm the correct feature, sub-feature, or task branch is active.
 2. Confirm the matching Git worktree checkout folder is active.
 3. Identify the next single task.
 4. Confirm the task belongs to the active feature or sub-feature.
@@ -162,29 +194,61 @@ Each task must be completed in this order:
 9. Confirm Diogenes' cuts were not reintroduced.
 10. Run the mapped tests for that task.
 11. Update documentation for the completed task slice.
-12. Start the next task only after documentation is updated.
+12. Emit `task_slice_complete` only after documentation is updated.
+13. Start the next task only after documentation is updated.
 
 Documentation is the last part of the task slice, not an afterthought outside the slice.
 
-## Builder Post-Build Security Rule
+## Builder Post-Build Patch Rule
+
+Builder must not batch patches.
 
 After the system is built, Builder must complete this sequence before post-build Diogenes, Bacon, Hoare, and Epictetus reviews:
 
-1. Perform a security review of the implemented system.
-2. Produce a needed security patch list in sensible order.
-3. Apply one security patch at a time in the correct branch and Git worktree checkout folder.
-4. Treat the patch as one task slice inside that worktree.
-5. Run the mapped Bacon validation.
-6. Check the mapped Hoare correctness obligations.
-7. Check the mapped Epictetus operational obligations.
-8. Confirm Diogenes' cuts were not reintroduced.
-9. Run targeted security tests.
-10. Run affected regression tests.
-11. Update patch documentation.
-12. Move to the next patch only after documentation is updated.
-13. Emit `security_patches_complete` only after every required patch is patched, validated, checked, tested, and documented.
+1. Perform a post-build security review of the implemented system.
+2. Produce a needed patch list in sensible order.
+3. Assign one patch task id to the current patch.
+4. Apply one patch at a time in the correct branch and Git worktree checkout folder.
+5. Confirm the patch belongs to the active feature or sub-feature.
+6. Treat the patch as one task slice inside that worktree.
+7. Touch only the files required for that patch.
+8. Run the mapped Bacon validation.
+9. Check the mapped Hoare correctness obligations.
+10. Check the mapped Epictetus operational obligations.
+11. Confirm Diogenes' cuts were not reintroduced.
+12. Run targeted tests.
+13. Run affected regression tests.
+14. Update patch documentation.
+15. Emit `patch_task_complete` only after documentation is updated.
+16. Move to the next patch only after documentation is updated.
+17. Emit `all_patch_tasks_complete` only after every required patch is patched, validated, checked, tested, and documented.
 
-Patch order is based on exploitability, blast radius, privilege impact, data exposure risk, dependency order, testability, and operational risk.
+One patch means one task slice, one branch/worktree context, one validation cycle, one test cycle, and one documentation update.
+
+Patch order is based on exploitability or user impact, blast radius, privilege impact, data exposure risk, dependency order, testability, and operational risk.
+
+## State-Machine Builder Flow
+
+The enforced Builder portion of the state machine is:
+
+```text
+S6_BUILD_READY
+S6B_BUILDER_FEATURE_WORKTREE_WORKFLOW
+S6C_BUILDER_TASK_SLICE_PLANNING
+S7_TASK_SLICE_IMPLEMENTATION
+S6C_BUILDER_TASK_SLICE_PLANNING  # loop until all task slices complete
+S7A_BUILDER_SECURITY_REVIEW
+S7B_PATCH_PLANNING
+S7C_PATCH_TASK_PLANNING
+S7D_PATCH_TASK_IMPLEMENTATION
+S7C_PATCH_TASK_PLANNING          # loop until all patch tasks complete
+S8_POST_BUILD_REDUCTION_REVIEW
+S9_POST_BUILD_EMPIRICAL_REVIEW
+S10_POST_BUILD_CORRECTNESS_REVIEW
+S11_POST_BUILD_OPERATIONAL_RESILIENCE_REVIEW
+S12_ADMISSION_DECISION
+S13_ACCEPTED
+```
 
 ## Artifact Rule
 
@@ -202,7 +266,7 @@ Run the package verifier before treating a package change as done:
 python tools\verify_packages.py
 ```
 
-The verifier checks required files, YAML front matter, TOML templates, Python state-machine happy paths, AnythingLLM handler syntax when Node.js is available, and Builder workflow drift markers.
+The verifier checks required files, YAML front matter, TOML templates, Python state-machine happy paths with task and patch loops, AnythingLLM handler syntax when Node.js is available, and Builder workflow drift markers.
 
 ## Repository Layout
 
