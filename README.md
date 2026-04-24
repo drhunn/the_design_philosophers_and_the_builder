@@ -1,6 +1,6 @@
 # The Design Philosophers and the Builder
 
-A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, or lump-build implementation.
+A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, lump-build implementation, missing Feature Branch Workflow, or loose security patching.
 
 This repository packages the same workflow for three runtimes:
 
@@ -83,15 +83,52 @@ The AnythingLLM state machine is embedded in `handler.js` so the plugin does not
 5. Hoare defines correctness obligations.
 6. Epictetus defines operational resilience obligations.
 7. Diogenes cuts excess before build.
-8. Builder 1986 slices, costs, orders, implements, verifies, and then documents each slice.
-9. Builder 1986 performs a post-build security review.
-10. Builder 1986 creates a needed security patch list in sensible order.
-11. Builder 1986 patches, tests, and documents each security patch before moving to the next patch.
-12. Diogenes cuts excess after security patching.
-13. Bacon verifies empirical evidence.
-14. Hoare verifies correctness.
-15. Epictetus verifies resilience.
-16. The parent admits only if the state machine held.
+8. Builder 1986 creates or initializes the GitHub repository.
+9. Builder 1986 recursively identifies features and sub-features.
+10. Builder 1986 creates matching branches and folders for the Feature Branch Workflow.
+11. Builder 1986 slices, costs, orders, implements, verifies, and then documents each slice.
+12. Builder 1986 performs a post-build security review.
+13. Builder 1986 creates a needed security patch list in sensible order.
+14. Builder 1986 patches one patch at a time, and each patch must pass Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, testing, and documentation before the next patch starts.
+15. Diogenes cuts excess after security patching.
+16. Bacon verifies empirical evidence.
+17. Hoare verifies correctness.
+18. Epictetus verifies resilience.
+19. The parent admits only if the state machine held.
+
+## Builder Feature Branch Workflow
+
+Builder must not start implementation until the Feature Branch Workflow exists.
+
+Builder must:
+
+1. Create or initialize the GitHub repository.
+2. Identify every feature.
+3. Recursively identify and list sub-features for each feature.
+4. Create a branch for each feature.
+5. Create a sub-branch for each sub-feature.
+6. Create a folder for each feature.
+7. Create a sub-folder for each sub-feature.
+8. Use the folders and branches to create the Feature Branch Workflow.
+9. Use the correct Feature Branch Workflow when working on the project.
+
+Branch pattern:
+
+```text
+feature/<feature-slug>
+feature/<feature-slug>/<sub-feature-slug>
+feature/<feature-slug>/<sub-feature-slug>/<nested-sub-feature-slug>
+```
+
+Folder pattern:
+
+```text
+features/<feature-slug>/
+features/<feature-slug>/<sub-feature-slug>/
+features/<feature-slug>/<sub-feature-slug>/<nested-sub-feature-slug>/
+```
+
+Builder must not code directly on `main`, skip branches, skip folders, or flatten the recursive feature tree for convenience.
 
 ## Builder Slice Rule
 
@@ -99,13 +136,15 @@ Builder must not build the whole design as a lump.
 
 Each slice must be completed in this order:
 
-1. Implement the approved slice.
-2. Run the mapped Bacon validation.
-3. Check the mapped Hoare correctness obligations.
-4. Check the mapped Epictetus operational obligations.
-5. Confirm Diogenes' cuts were not reintroduced.
-6. Update documentation for the completed slice.
-7. Emit `implementation_complete` only after documentation is updated.
+1. Confirm the correct feature or sub-feature branch is active.
+2. Confirm the matching feature or sub-feature folder exists.
+3. Implement the approved slice.
+4. Run the mapped Bacon validation.
+5. Check the mapped Hoare correctness obligations.
+6. Check the mapped Epictetus operational obligations.
+7. Confirm Diogenes' cuts were not reintroduced.
+8. Update documentation for the completed slice.
+9. Emit `implementation_complete` only after documentation is updated.
 
 Documentation is the last part of the slice, not an afterthought outside the slice.
 
@@ -116,11 +155,15 @@ After the system is built, Builder must complete this sequence before post-build
 1. Perform a security review of the implemented system.
 2. Produce a needed security patch list in sensible order.
 3. Apply one security patch at a time.
-4. Test the patch.
-5. Run affected regression checks.
-6. Update patch documentation.
-7. Move to the next patch only after documentation is updated.
-8. Emit `security_patches_complete` only after every required patch is patched, tested, and documented.
+4. Run the mapped Bacon validation.
+5. Check the mapped Hoare correctness obligations.
+6. Check the mapped Epictetus operational obligations.
+7. Confirm Diogenes' cuts were not reintroduced.
+8. Run targeted security tests.
+9. Run affected regression tests.
+10. Update patch documentation.
+11. Move to the next patch only after documentation is updated.
+12. Emit `security_patches_complete` only after every required patch is patched, validated, checked, tested, and documented.
 
 Patch order is based on exploitability, blast radius, privilege impact, data exposure risk, dependency order, testability, and operational risk.
 
@@ -140,7 +183,7 @@ Run the package verifier before treating a package change as done:
 python tools\verify_packages.py
 ```
 
-The verifier checks required files, YAML front matter, TOML templates, Python state-machine happy paths, and AnythingLLM handler syntax when Node.js is available.
+The verifier checks required files, YAML front matter, TOML templates, Python state-machine happy paths, AnythingLLM handler syntax when Node.js is available, and Builder workflow drift markers.
 
 ## Repository Layout
 
@@ -149,9 +192,6 @@ codex-desktop/        canonical Codex Desktop package
 claude-code/          canonical Claude Code package
 anythingllm/          canonical AnythingLLM package
 tools/                package verification and maintenance tools
-agents/               repo-level reference agent definitions
-scripts/              repo-level reference scripts
-templates/            repo-level reference templates
 ```
 
 ## Maintenance Rule
