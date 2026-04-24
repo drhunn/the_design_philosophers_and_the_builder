@@ -27,6 +27,18 @@ AGENT_FILES = [
     "builder-1986.md",
 ]
 
+BUILDER_REQUIRED_MARKERS = [
+    "Feature Branch Workflow",
+    "recursively identify and list the sub-features",
+    "create or initialize the GitHub repository",
+    "feature/<feature-slug>",
+    "features/<feature-slug>/",
+    "Run the mapped Bacon validation",
+    "Check the mapped Hoare correctness obligations",
+    "Check the mapped Epictetus operational obligations",
+    "Confirm Diogenes' cuts were not reintroduced",
+]
+
 PY_HAPPY_PATH_SNIPPET = """
 import importlib.util
 from pathlib import Path
@@ -51,6 +63,12 @@ const plugin = require(process.argv[2]);
   const dispatch = await runtime.handler.call({}, {operation: 'dispatch', state: 'S0_INTAKE', event: 'new_request'});
   const parsed = JSON.parse(dispatch);
   if (!parsed.ok || parsed.to_state !== 'S1_PROBLEM_EXAMINATION') throw new Error('bad dispatch result');
+  const builder = await runtime.handler.call({}, {operation: 'builder_constraint'});
+  const parsedBuilder = JSON.parse(builder);
+  const serialized = JSON.stringify(parsedBuilder);
+  for (const marker of ['Feature Branch Workflow', 'mapped Bacon validation', 'mapped Hoare correctness', 'mapped Epictetus operational', 'Diogenes cuts']) {
+    if (!serialized.includes(marker)) throw new Error(`builder constraint missing marker: ${marker}`);
+  }
   console.log('ok');
 })();
 """
@@ -68,6 +86,16 @@ def require_file(errors: list[str], path: Path) -> None:
 def require_dir(errors: list[str], path: Path) -> None:
     if not path.is_dir():
         fail(errors, f"missing directory: {path.relative_to(ROOT)}")
+
+
+def check_contains(errors: list[str], path: Path, markers: list[str]) -> None:
+    require_file(errors, path)
+    if not path.is_file():
+        return
+    text = path.read_text(encoding="utf-8")
+    for marker in markers:
+        if marker not in text:
+            fail(errors, f"{path.relative_to(ROOT)} missing marker: {marker}")
 
 
 def check_front_matter(errors: list[str], path: Path) -> None:
@@ -139,6 +167,7 @@ def check_package_common(errors: list[str], base: Path, skill: bool) -> None:
     require_dir(errors, base / "templates")
     for name in AGENT_FILES:
         require_file(errors, base / "agents" / name)
+    check_contains(errors, base / "agents" / "builder-1986.md", BUILDER_REQUIRED_MARKERS)
     check_toml(errors, base / "templates" / "handoff.toml")
     if skill:
         check_front_matter(errors, base / "SKILL.md")
@@ -168,6 +197,10 @@ def main() -> int:
     check_package_common(errors, CODEX, skill=True)
     check_package_common(errors, CLAUDE, skill=True)
     check_anythingllm(errors)
+
+    package_maintenance = ROOT / "PACKAGE_MAINTENANCE.md"
+    if package_maintenance.exists():
+        fail(errors, "PACKAGE_MAINTENANCE.md should not exist; maintenance rules belong in README.md")
 
     if errors:
         print("Package verification failed:")
