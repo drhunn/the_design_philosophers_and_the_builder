@@ -1,4 +1,4 @@
-const STATE = {
+const STATES = {
   S0: "S0_INTAKE",
   S1: "S1_PROBLEM_EXAMINATION",
   S1A: "S1A_SCOPED_IDEAL_MODEL",
@@ -20,163 +20,116 @@ const STATE = {
   S15: "S15_EXPLORATORY",
 };
 
-const ACTION = {
-  RUN_SOCRATES: "run_socrates",
-  RUN_PLATO: "run_plato",
-  RUN_ARISTOTLE: "run_aristotle",
-  RUN_BACON_PREBUILD: "run_bacon_prebuild",
-  RUN_HOARE_PREBUILD: "run_hoare_prebuild",
-  RUN_EPICTETUS_PREBUILD: "run_epictetus_prebuild",
-  RUN_DIOGENES_PREBUILD: "run_diogenes_prebuild",
-  CHECK_BUILD_PACKAGE: "check_build_package",
-  RUN_BUILDER_SLICE_PLANNING: "run_builder_slice_planning",
-  RUN_BUILDER_IMPLEMENTATION: "run_builder_implementation",
-  RUN_DIOGENES_POSTBUILD: "run_diogenes_postbuild",
-  RUN_BACON_POSTBUILD: "run_bacon_postbuild",
-  RUN_HOARE_POSTBUILD: "run_hoare_postbuild",
-  RUN_EPICTETUS_POSTBUILD: "run_epictetus_postbuild",
-  MAKE_ADMISSION_DECISION: "make_admission_decision",
-  ACCEPT_FEATURE: "accept_feature",
-  REQUIRE_POSTMORTEM: "require_postmortem",
-  ALLOW_PROTOTYPE: "allow_prototype",
-  MARK_EXPLORATORY_ONLY: "mark_exploratory_only",
-  RETURN_TO_SOCRATES: "return_to_socrates",
-  RETURN_TO_PLATO: "return_to_plato",
-  RETURN_TO_ARISTOTLE: "return_to_aristotle",
-  RETURN_TO_BACON_PREBUILD: "return_to_bacon_prebuild",
-  RETURN_TO_HOARE_PREBUILD: "return_to_hoare_prebuild",
-  RETURN_TO_EPICTETUS_PREBUILD: "return_to_epictetus_prebuild",
-  RETURN_TO_BUILDER: "return_to_builder",
-  RETURN_TO_SLICE_PLANNING: "return_to_slice_planning",
-};
-
-function transition(nextState, actions = [], guard = null) {
-  return { nextState, actions, guard };
+function t(to, actions = [], guard = null) {
+  return { to, actions, guard };
 }
 
 const TABLE = {
-  [STATE.S0]: {
-    new_request: transition(STATE.S1, [ACTION.RUN_SOCRATES]),
+  [STATES.S0]: { new_request: t(STATES.S1, ["run_socrates"]) },
+  [STATES.S1]: {
+    request_is_vague: t(STATES.S1, ["run_socrates"]),
+    problem_is_clear: t(STATES.S1A, ["run_plato"]),
+    prototype_only: t(STATES.S15, ["allow_prototype", "mark_exploratory_only"]),
   },
-  [STATE.S1]: {
-    request_is_vague: transition(STATE.S1, [ACTION.RUN_SOCRATES]),
-    problem_is_clear: transition(STATE.S1A, [ACTION.RUN_PLATO]),
-    prototype_only: transition(STATE.S15, [ACTION.ALLOW_PROTOTYPE, ACTION.MARK_EXPLORATORY_ONLY]),
+  [STATES.S1A]: {
+    ideal_model_complete: t(STATES.S2, ["run_aristotle"]),
+    new_contradiction_found: t(STATES.S1, ["return_to_socrates"]),
+    excess_complexity_found: t(STATES.S1A, ["run_plato"]),
   },
-  [STATE.S1A]: {
-    ideal_model_complete: transition(STATE.S2, [ACTION.RUN_ARISTOTLE]),
-    new_contradiction_found: transition(STATE.S1, [ACTION.RETURN_TO_SOCRATES]),
-    excess_complexity_found: transition(STATE.S1A, [ACTION.RUN_PLATO]),
+  [STATES.S2]: {
+    architecture_complete: t(STATES.S3, ["run_bacon_prebuild"]),
+    design_gap_found: t(STATES.S2, ["run_aristotle"]),
+    product_constraint_missing: t(STATES.S1A, ["return_to_plato"]),
+    new_contradiction_found: t(STATES.S1, ["return_to_socrates"]),
   },
-  [STATE.S2]: {
-    architecture_complete: transition(STATE.S3, [ACTION.RUN_BACON_PREBUILD]),
-    design_gap_found: transition(STATE.S2, [ACTION.RUN_ARISTOTLE]),
-    product_constraint_missing: transition(STATE.S1A, [ACTION.RETURN_TO_PLATO]),
-    new_contradiction_found: transition(STATE.S1, [ACTION.RETURN_TO_SOCRATES]),
+  [STATES.S3]: {
+    validation_obligations_known: t(STATES.S4, ["run_hoare_prebuild"]),
+    design_gap_found: t(STATES.S2, ["return_to_aristotle"]),
+    product_constraint_missing: t(STATES.S1A, ["return_to_plato"]),
   },
-  [STATE.S3]: {
-    validation_obligations_known: transition(STATE.S4, [ACTION.RUN_HOARE_PREBUILD]),
-    design_gap_found: transition(STATE.S2, [ACTION.RETURN_TO_ARISTOTLE]),
-    product_constraint_missing: transition(STATE.S1A, [ACTION.RETURN_TO_PLATO]),
-    new_contradiction_found: transition(STATE.S1, [ACTION.RETURN_TO_SOCRATES]),
+  [STATES.S4]: {
+    correctness_obligations_known: t(STATES.S4A, ["run_epictetus_prebuild"]),
+    design_gap_found: t(STATES.S2, ["return_to_aristotle"]),
+    validation_gap_found: t(STATES.S3, ["return_to_bacon_prebuild"]),
   },
-  [STATE.S4]: {
-    correctness_obligations_known: transition(STATE.S4A, [ACTION.RUN_EPICTETUS_PREBUILD]),
-    design_gap_found: transition(STATE.S2, [ACTION.RETURN_TO_ARISTOTLE]),
-    validation_gap_found: transition(STATE.S3, [ACTION.RETURN_TO_BACON_PREBUILD]),
-    product_constraint_missing: transition(STATE.S1A, [ACTION.RETURN_TO_PLATO]),
-    new_contradiction_found: transition(STATE.S1, [ACTION.RETURN_TO_SOCRATES]),
+  [STATES.S4A]: {
+    operational_obligations_known: t(STATES.S5, ["run_diogenes_prebuild"]),
+    design_gap_found: t(STATES.S2, ["return_to_aristotle"]),
+    validation_gap_found: t(STATES.S3, ["return_to_bacon_prebuild"]),
+    correctness_gap_found: t(STATES.S4, ["return_to_hoare_prebuild"]),
+    product_constraint_missing: t(STATES.S1A, ["return_to_plato"]),
   },
-  [STATE.S4A]: {
-    operational_obligations_known: transition(STATE.S5, [ACTION.RUN_DIOGENES_PREBUILD]),
-    design_gap_found: transition(STATE.S2, [ACTION.RETURN_TO_ARISTOTLE]),
-    validation_gap_found: transition(STATE.S3, [ACTION.RETURN_TO_BACON_PREBUILD]),
-    correctness_gap_found: transition(STATE.S4, [ACTION.RETURN_TO_HOARE_PREBUILD]),
-    product_constraint_missing: transition(STATE.S1A, [ACTION.RETURN_TO_PLATO]),
+  [STATES.S5]: {
+    austerity_review_complete: t(STATES.S6, ["check_build_package"]),
+    excess_complexity_found: t(STATES.S2, ["return_to_aristotle"]),
+    product_constraint_missing: t(STATES.S1A, ["return_to_plato"]),
+    operational_gap_found: t(STATES.S4A, ["return_to_epictetus_prebuild"]),
   },
-  [STATE.S5]: {
-    austerity_review_complete: transition(STATE.S6, [ACTION.CHECK_BUILD_PACKAGE]),
-    excess_complexity_found: transition(STATE.S2, [ACTION.RETURN_TO_ARISTOTLE]),
-    product_constraint_missing: transition(STATE.S1A, [ACTION.RETURN_TO_PLATO]),
-    operational_gap_found: transition(STATE.S4A, [ACTION.RETURN_TO_EPICTETUS_PREBUILD]),
-    new_contradiction_found: transition(STATE.S1, [ACTION.RETURN_TO_SOCRATES]),
+  [STATES.S6]: {
+    build_package_complete: t(STATES.S6A, ["run_builder_slice_planning"], "build_package_complete"),
+    build_package_incomplete: t(STATES.S14, ["require_postmortem"]),
+    prototype_only: t(STATES.S15, ["allow_prototype", "mark_exploratory_only"]),
   },
-  [STATE.S6]: {
-    build_package_complete: transition(STATE.S6A, [ACTION.RUN_BUILDER_SLICE_PLANNING], "build_package_complete"),
-    build_package_incomplete: transition(STATE.S14, [ACTION.REQUIRE_POSTMORTEM]),
-    prototype_only: transition(STATE.S15, [ACTION.ALLOW_PROTOTYPE, ACTION.MARK_EXPLORATORY_ONLY]),
+  [STATES.S6A]: {
+    slice_plan_complete: t(STATES.S7, ["run_builder_implementation"], "slice_plan_complete"),
+    slice_plan_failed: t(STATES.S14, ["return_to_slice_planning", "require_postmortem"]),
+    feature_inventory_mismatch: t(STATES.S1A, ["return_to_plato", "require_postmortem"]),
+    validation_mapping_failed: t(STATES.S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+    correctness_mapping_failed: t(STATES.S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+    operational_mapping_failed: t(STATES.S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
+    design_gap_found: t(STATES.S2, ["return_to_aristotle", "require_postmortem"]),
   },
-  [STATE.S6A]: {
-    slice_plan_complete: transition(STATE.S7, [ACTION.RUN_BUILDER_IMPLEMENTATION], "slice_plan_complete"),
-    slice_plan_failed: transition(STATE.S14, [ACTION.RETURN_TO_SLICE_PLANNING, ACTION.REQUIRE_POSTMORTEM]),
-    feature_inventory_mismatch: transition(STATE.S1A, [ACTION.RETURN_TO_PLATO, ACTION.REQUIRE_POSTMORTEM]),
-    validation_mapping_failed: transition(STATE.S3, [ACTION.RETURN_TO_BACON_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
-    correctness_mapping_failed: transition(STATE.S4, [ACTION.RETURN_TO_HOARE_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
-    operational_mapping_failed: transition(STATE.S4A, [ACTION.RETURN_TO_EPICTETUS_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
-    design_gap_found: transition(STATE.S2, [ACTION.RETURN_TO_ARISTOTLE, ACTION.REQUIRE_POSTMORTEM]),
+  [STATES.S7]: {
+    implementation_complete: t(STATES.S8, ["run_diogenes_postbuild"]),
+    slice_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
+    design_gap_found: t(STATES.S2, ["return_to_aristotle", "require_postmortem"]),
+    validation_gap_found: t(STATES.S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+    correctness_gap_found: t(STATES.S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+    operational_gap_found: t(STATES.S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
   },
-  [STATE.S7]: {
-    implementation_complete: transition(STATE.S8, [ACTION.RUN_DIOGENES_POSTBUILD]),
-    slice_failed: transition(STATE.S14, [ACTION.RETURN_TO_BUILDER, ACTION.REQUIRE_POSTMORTEM]),
-    design_gap_found: transition(STATE.S2, [ACTION.RETURN_TO_ARISTOTLE, ACTION.REQUIRE_POSTMORTEM]),
-    validation_gap_found: transition(STATE.S3, [ACTION.RETURN_TO_BACON_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
-    correctness_gap_found: transition(STATE.S4, [ACTION.RETURN_TO_HOARE_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
-    operational_gap_found: transition(STATE.S4A, [ACTION.RETURN_TO_EPICTETUS_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
-    new_contradiction_found: transition(STATE.S1, [ACTION.RETURN_TO_SOCRATES, ACTION.REQUIRE_POSTMORTEM]),
+  [STATES.S8]: {
+    reduction_review_complete: t(STATES.S9, ["run_bacon_postbuild"]),
+    excess_complexity_found: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
   },
-  [STATE.S8]: {
-    reduction_review_complete: transition(STATE.S9, [ACTION.RUN_BACON_POSTBUILD]),
-    excess_complexity_found: transition(STATE.S14, [ACTION.RETURN_TO_BUILDER, ACTION.REQUIRE_POSTMORTEM]),
-    design_gap_found: transition(STATE.S2, [ACTION.RETURN_TO_ARISTOTLE, ACTION.REQUIRE_POSTMORTEM]),
+  [STATES.S9]: {
+    empirical_review_passed: t(STATES.S10, ["run_hoare_postbuild"], "empirical_review_passed"),
+    empirical_review_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
   },
-  [STATE.S9]: {
-    empirical_review_passed: transition(STATE.S10, [ACTION.RUN_HOARE_POSTBUILD], "empirical_review_passed"),
-    empirical_review_failed: transition(STATE.S14, [ACTION.RETURN_TO_BUILDER, ACTION.REQUIRE_POSTMORTEM]),
-    design_gap_found: transition(STATE.S3, [ACTION.RETURN_TO_BACON_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
+  [STATES.S10]: {
+    correctness_review_passed: t(STATES.S11, ["run_epictetus_postbuild"], "correctness_review_passed"),
+    correctness_review_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
   },
-  [STATE.S10]: {
-    correctness_review_passed: transition(STATE.S11, [ACTION.RUN_EPICTETUS_POSTBUILD], "correctness_review_passed"),
-    correctness_review_failed: transition(STATE.S14, [ACTION.RETURN_TO_BUILDER, ACTION.REQUIRE_POSTMORTEM]),
-    design_gap_found: transition(STATE.S4, [ACTION.RETURN_TO_HOARE_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
+  [STATES.S11]: {
+    operations_review_passed: t(STATES.S12, ["make_admission_decision"], "operations_review_passed"),
+    operations_review_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
   },
-  [STATE.S11]: {
-    operations_review_passed: transition(STATE.S12, [ACTION.MAKE_ADMISSION_DECISION], "operations_review_passed"),
-    operations_review_failed: transition(STATE.S14, [ACTION.RETURN_TO_BUILDER, ACTION.REQUIRE_POSTMORTEM]),
-    design_gap_found: transition(STATE.S2, [ACTION.RETURN_TO_ARISTOTLE, ACTION.REQUIRE_POSTMORTEM]),
-    validation_gap_found: transition(STATE.S3, [ACTION.RETURN_TO_BACON_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
-    correctness_gap_found: transition(STATE.S4, [ACTION.RETURN_TO_HOARE_PREBUILD, ACTION.REQUIRE_POSTMORTEM]),
+  [STATES.S12]: {
+    admission_granted: t(STATES.S13, ["accept_feature"], "admission_granted"),
+    admission_denied: t(STATES.S14, ["require_postmortem"]),
   },
-  [STATE.S12]: {
-    admission_granted: transition(STATE.S13, [ACTION.ACCEPT_FEATURE], "admission_granted"),
-    admission_denied: transition(STATE.S14, [ACTION.REQUIRE_POSTMORTEM]),
+  [STATES.S13]: {},
+  [STATES.S14]: {
+    new_contradiction_found: t(STATES.S1, ["run_socrates"]),
+    product_constraint_missing: t(STATES.S1A, ["run_plato"]),
+    design_gap_found: t(STATES.S2, ["run_aristotle"]),
+    validation_gap_found: t(STATES.S3, ["run_bacon_prebuild"]),
+    correctness_gap_found: t(STATES.S4, ["run_hoare_prebuild"]),
+    operational_gap_found: t(STATES.S4A, ["run_epictetus_prebuild"]),
+    excess_complexity_found: t(STATES.S5, ["run_diogenes_prebuild"]),
+    slice_plan_failed: t(STATES.S6A, ["run_builder_slice_planning"]),
+    slice_failed: t(STATES.S7, ["run_builder_implementation"]),
   },
-  [STATE.S13]: {},
-  [STATE.S14]: {
-    new_contradiction_found: transition(STATE.S1, [ACTION.RUN_SOCRATES]),
-    product_constraint_missing: transition(STATE.S1A, [ACTION.RUN_PLATO]),
-    design_gap_found: transition(STATE.S2, [ACTION.RUN_ARISTOTLE]),
-    validation_gap_found: transition(STATE.S3, [ACTION.RUN_BACON_PREBUILD]),
-    correctness_gap_found: transition(STATE.S4, [ACTION.RUN_HOARE_PREBUILD]),
-    operational_gap_found: transition(STATE.S4A, [ACTION.RUN_EPICTETUS_PREBUILD]),
-    excess_complexity_found: transition(STATE.S5, [ACTION.RUN_DIOGENES_PREBUILD]),
-    slice_plan_failed: transition(STATE.S6A, [ACTION.RUN_BUILDER_SLICE_PLANNING]),
-    slice_failed: transition(STATE.S7, [ACTION.RUN_BUILDER_IMPLEMENTATION]),
-  },
-  [STATE.S15]: {
-    architecture_complete: transition(STATE.S2, [ACTION.RUN_ARISTOTLE]),
-    implementation_complete: transition(STATE.S8, [ACTION.RUN_DIOGENES_POSTBUILD]),
-    new_contradiction_found: transition(STATE.S1, [ACTION.RETURN_TO_SOCRATES]),
+  [STATES.S15]: {
+    new_contradiction_found: t(STATES.S1, ["return_to_socrates"]),
+    architecture_complete: t(STATES.S2, ["run_aristotle"]),
+    implementation_complete: t(STATES.S8, ["run_diogenes_postbuild"]),
   },
 };
 
 function parseContext(contextJson) {
   if (!contextJson) return {};
   if (typeof contextJson === "object") return contextJson;
-  try {
-    return JSON.parse(contextJson);
-  } catch (_err) {
-    return {};
-  }
+  try { return JSON.parse(contextJson); } catch (_err) { return {}; }
 }
 
 function availableEvents(state) {
@@ -185,32 +138,11 @@ function availableEvents(state) {
 
 function dispatch(state, event, context = {}) {
   const transitions = TABLE[state];
-  if (!transitions) {
-    return { ok: false, error: `No transitions defined for state: ${state}` };
-  }
-  const t = transitions[event];
-  if (!t) {
-    return {
-      ok: false,
-      error: `Invalid event '${event}' in state '${state}'.`,
-      allowed_events: availableEvents(state),
-    };
-  }
-  if (t.guard && context[t.guard] !== true) {
-    return {
-      ok: false,
-      error: `Required context flag not satisfied: ${t.guard}`,
-      required_context_flag: t.guard,
-    };
-  }
-  return {
-    ok: true,
-    from_state: state,
-    event,
-    to_state: t.nextState,
-    actions: t.actions,
-    timestamp: new Date().toISOString(),
-  };
+  if (!transitions) return { ok: false, error: `No transitions defined for state: ${state}` };
+  const transition = transitions[event];
+  if (!transition) return { ok: false, error: `Invalid event '${event}' in state '${state}'.`, allowed_events: availableEvents(state) };
+  if (transition.guard && context[transition.guard] !== true) return { ok: false, error: `Required context flag not satisfied: ${transition.guard}`, required_context_flag: transition.guard };
+  return { ok: true, from_state: state, event, to_state: transition.to, actions: transition.actions, timestamp: new Date().toISOString() };
 }
 
 function handoffTemplate() {
@@ -254,18 +186,8 @@ function describe() {
   return {
     name: "The Design Philosophers and the Builder",
     purpose: "A bounded Mealy-style workflow for designing software from scratch without agent drift, user drift, silent scope expansion, or lump-build implementation.",
-    chain: [
-      "Socrates bounds the real problem",
-      "Plato defines the scoped ideal and hard product constraints",
-      "Aristotle derives structure",
-      "Bacon defines proof",
-      "Hoare defines correctness",
-      "Epictetus defines failure discipline",
-      "Diogenes cuts excess",
-      "Builder 1986 slices and implements incrementally",
-      "Post-build Diogenes, Bacon, Hoare, and Epictetus verify the result",
-      "Parent admits only if the state machine held",
-    ],
+    packaged_files: ["plugin.json", "handler.js", "README.md", "agents/README.md", "templates/handoff.toml"],
+    chain: ["Socrates", "Plato", "Aristotle", "Bacon", "Hoare", "Epictetus", "Diogenes", "Builder 1986", "Diogenes", "Bacon", "Hoare", "Epictetus", "Parent admission"],
   };
 }
 
@@ -282,61 +204,38 @@ function routingGuidance(userInput = "") {
       "If it adds complexity without traceable value, route to Diogenes.",
       "If it changes implementation inside an approved slice, route to Builder.",
     ],
-    note: "This function provides routing guidance only. The calling agent must classify against the current bounded artifact.",
+    note: "Guidance only. Classify against the current bounded artifact before dispatching a state-machine event.",
   };
 }
 
 function builderConstraint() {
   return {
     constraint: "Builder is not allowed to build the whole design as a lump.",
-    required_behavior: [
-      "slice it",
-      "cost it",
-      "order it",
-      "implement incrementally",
-      "validate each slice against Bacon",
-      "check each slice against Hoare",
-      "preserve operational obligations from Epictetus",
-      "respect Diogenes' cuts",
-      "route backward when a slice exposes a bounded-artifact failure",
-    ],
+    required_behavior: ["slice it", "cost it", "order it", "implement incrementally", "validate against Bacon", "check against Hoare", "preserve Epictetus operations", "respect Diogenes cuts", "route backward on bounded-artifact failure"],
   };
 }
 
 function happyPath() {
-  return [
-    "new_request",
-    "problem_is_clear",
-    "ideal_model_complete",
-    "architecture_complete",
-    "validation_obligations_known",
-    "correctness_obligations_known",
-    "operational_obligations_known",
-    "austerity_review_complete",
-    "build_package_complete",
-    "slice_plan_complete",
-    "implementation_complete",
-    "reduction_review_complete",
-    "empirical_review_passed",
-    "correctness_review_passed",
-    "operations_review_passed",
-    "admission_granted",
-  ];
+  return ["new_request", "problem_is_clear", "ideal_model_complete", "architecture_complete", "validation_obligations_known", "correctness_obligations_known", "operational_obligations_known", "austerity_review_complete", "build_package_complete", "slice_plan_complete", "implementation_complete", "reduction_review_complete", "empirical_review_passed", "correctness_review_passed", "operations_review_passed", "admission_granted"];
 }
 
 module.exports.runtime = {
   handler: async function ({ operation, state, event, context_json, user_input }) {
-    const op = operation || "describe";
-    const context = parseContext(context_json);
-
-    if (op === "describe") return JSON.stringify(describe(), null, 2);
-    if (op === "available_events") return JSON.stringify({ state, available_events: availableEvents(state) }, null, 2);
-    if (op === "dispatch") return JSON.stringify(dispatch(state, event, context), null, 2);
-    if (op === "happy_path") return JSON.stringify({ events: happyPath() }, null, 2);
-    if (op === "handoff_template") return handoffTemplate();
-    if (op === "routing_guidance") return JSON.stringify(routingGuidance(user_input), null, 2);
-    if (op === "builder_constraint") return JSON.stringify(builderConstraint(), null, 2);
-
-    return JSON.stringify({ ok: false, error: `Unknown operation: ${op}` }, null, 2);
+    try {
+      const op = operation || "describe";
+      const context = parseContext(context_json);
+      if (typeof this.introspect === "function") this.introspect(`Design Philosophers operation: ${op}`);
+      if (op === "describe") return JSON.stringify(describe(), null, 2);
+      if (op === "available_events") return JSON.stringify({ state, available_events: availableEvents(state) }, null, 2);
+      if (op === "dispatch") return JSON.stringify(dispatch(state, event, context), null, 2);
+      if (op === "happy_path") return JSON.stringify({ events: happyPath() }, null, 2);
+      if (op === "handoff_template") return handoffTemplate();
+      if (op === "routing_guidance") return JSON.stringify(routingGuidance(user_input), null, 2);
+      if (op === "builder_constraint") return JSON.stringify(builderConstraint(), null, 2);
+      return JSON.stringify({ ok: false, error: `Unknown operation: ${op}` }, null, 2);
+    } catch (err) {
+      if (typeof this.logger === "function") this.logger("Design Philosophers skill failed", err.message);
+      return `The Design Philosophers and the Builder skill failed: ${err.message}`;
+    }
   },
 };
