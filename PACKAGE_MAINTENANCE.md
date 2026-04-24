@@ -64,6 +64,25 @@ Slice completion order:
 6. Update documentation for the completed slice.
 7. Emit `implementation_complete` only after documentation is updated.
 
+## Builder Post-Build Security Rule
+
+After implementation is complete, Builder 1986 must perform the post-build security loop before post-build Diogenes, Bacon, Hoare, and Epictetus reviews.
+
+Security completion order:
+
+1. Perform a security review of the implemented system.
+2. Create a needed security patch list in sensible order.
+3. Apply one security patch at a time.
+4. Run targeted security tests.
+5. Run affected regression tests.
+6. Check relevant Hoare correctness obligations.
+7. Check relevant Epictetus operational obligations.
+8. Update patch documentation.
+9. Start the next patch only after the current patch is tested and documented.
+10. Emit `security_patches_complete` only after every required patch is patched, tested, and documented.
+
+Patch order is based on exploitability, blast radius, privilege impact, data exposure risk, dependency order, testability, and operational risk.
+
 ## Verification
 
 Before treating package work as complete, run:
