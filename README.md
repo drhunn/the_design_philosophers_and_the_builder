@@ -1,6 +1,6 @@
 # The Design Philosophers and the Builder
 
-A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, lump-build implementation, missing Feature Branch Workflow, or loose security patching.
+A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, lump-build implementation, missing Feature Branch Workflow, loose worktree task slicing, or loose security patching.
 
 This repository packages the same workflow for three runtimes:
 
@@ -86,15 +86,16 @@ The AnythingLLM state machine is embedded in `handler.js` so the plugin does not
 8. Builder 1986 creates or initializes the GitHub repository.
 9. Builder 1986 recursively identifies features and sub-features.
 10. Builder 1986 creates matching branches and Git worktree checkout folders for the Feature Branch Workflow.
-11. Builder 1986 slices, costs, orders, implements, verifies, and then documents each slice.
-12. Builder 1986 performs a post-build security review.
-13. Builder 1986 creates a needed security patch list in sensible order.
-14. Builder 1986 patches one patch at a time, and each patch must pass Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, testing, and documentation before the next patch starts.
-15. Diogenes cuts excess after security patching.
-16. Bacon verifies empirical evidence.
-17. Hoare verifies correctness.
-18. Epictetus verifies resilience.
-19. The parent admits only if the state machine held.
+11. Builder 1986 slices each Git worktree into one task at a time.
+12. Builder 1986 implements, verifies, tests, and documents each task slice before starting the next task.
+13. Builder 1986 performs a post-build security review.
+14. Builder 1986 creates a needed security patch list in sensible order.
+15. Builder 1986 patches one patch-task at a time, and each patch-task must pass Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, testing, and documentation before the next patch starts.
+16. Diogenes cuts excess after security patching.
+17. Bacon verifies empirical evidence.
+18. Hoare verifies correctness.
+19. Epictetus verifies resilience.
+20. The parent admits only if the state machine held.
 
 ## Builder Feature Branch Workflow
 
@@ -138,25 +139,32 @@ Git worktree means the real checkout folder created by Git for one branch.
 
 Branch means the Git history line.
 
+Task slice means one bounded unit of work inside the active Git worktree.
+
 Builder must not confuse these terms.
 
-## Builder Slice Rule
+## Builder Worktree Task Slicing Rule
 
-Builder must not build the whole design as a lump.
+A Git worktree is not permission to do a lump build.
 
-Each slice must be completed in this order:
+Inside each Git worktree, Builder must slice work into one task at a time.
+
+Each task must be completed in this order:
 
 1. Confirm the correct feature or sub-feature branch is active.
 2. Confirm the matching Git worktree checkout folder is active.
-3. Implement the approved slice.
-4. Run the mapped Bacon validation.
-5. Check the mapped Hoare correctness obligations.
-6. Check the mapped Epictetus operational obligations.
-7. Confirm Diogenes' cuts were not reintroduced.
-8. Update documentation for the completed slice.
-9. Emit `implementation_complete` only after documentation is updated.
+3. Identify the next single task.
+4. Confirm the task belongs to the active feature or sub-feature.
+5. Implement only that task.
+6. Run the mapped Bacon validation.
+7. Check the mapped Hoare correctness obligations.
+8. Check the mapped Epictetus operational obligations.
+9. Confirm Diogenes' cuts were not reintroduced.
+10. Run the mapped tests for that task.
+11. Update documentation for the completed task slice.
+12. Start the next task only after documentation is updated.
 
-Documentation is the last part of the slice, not an afterthought outside the slice.
+Documentation is the last part of the task slice, not an afterthought outside the slice.
 
 ## Builder Post-Build Security Rule
 
@@ -165,15 +173,16 @@ After the system is built, Builder must complete this sequence before post-build
 1. Perform a security review of the implemented system.
 2. Produce a needed security patch list in sensible order.
 3. Apply one security patch at a time in the correct branch and Git worktree checkout folder.
-4. Run the mapped Bacon validation.
-5. Check the mapped Hoare correctness obligations.
-6. Check the mapped Epictetus operational obligations.
-7. Confirm Diogenes' cuts were not reintroduced.
-8. Run targeted security tests.
-9. Run affected regression tests.
-10. Update patch documentation.
-11. Move to the next patch only after documentation is updated.
-12. Emit `security_patches_complete` only after every required patch is patched, validated, checked, tested, and documented.
+4. Treat the patch as one task slice inside that worktree.
+5. Run the mapped Bacon validation.
+6. Check the mapped Hoare correctness obligations.
+7. Check the mapped Epictetus operational obligations.
+8. Confirm Diogenes' cuts were not reintroduced.
+9. Run targeted security tests.
+10. Run affected regression tests.
+11. Update patch documentation.
+12. Move to the next patch only after documentation is updated.
+13. Emit `security_patches_complete` only after every required patch is patched, validated, checked, tested, and documented.
 
 Patch order is based on exploitability, blast radius, privilege impact, data exposure risk, dependency order, testability, and operational risk.
 
