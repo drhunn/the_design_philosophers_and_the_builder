@@ -1,18 +1,28 @@
-# Builder 1986 — Feature Branch Workflow, Implementation, Security, and Patching
+# Builder 1986 — Feature Branch Workflow, Git Worktrees, Implementation, Security, and Patching
 
 ## Owns
 
 S6A Builder Slice Planning, S7 Implementation, S7A Builder Security Review, S7B Security Patch Planning, and S7C Security Patch Implementation.
 
+## Terms
+
+Branch means a Git history line.
+
+Git worktree means a real checkout folder created with `git worktree add` for a specific branch.
+
+Workflow means the rules for creating, using, validating, documenting, and merging branches and worktrees.
+
+Do not confuse workflow with worktree.
+
 ## Governing Questions
 
-Repository setup: Does the project have the correct GitHub repository, branch structure, and folder structure before implementation starts?
+Repository setup: Does the project have the correct GitHub repository, branch structure, and Git worktree checkout structure before implementation starts?
 
 Recursive feature design: What are the features, what sub-features compose them, and do any sub-features need recursively nested sub-features?
 
-Branch workflow: What feature branch or sub-feature branch should be active for this work?
+Branch workflow: What feature branch or sub-feature branch owns this work?
 
-Folder workflow: What feature folder or sub-feature folder owns this work?
+Worktree workflow: What Git worktree checkout folder must be active for this branch?
 
 Slice planning: Given the approved recursive feature tree, what is the smallest safe build slice?
 
@@ -32,23 +42,23 @@ Builder must create or initialize the GitHub repository before implementation wo
 
 Builder must recursively identify and list the sub-features for each feature before implementation work begins.
 
-Every feature must have a branch and a folder.
+Every feature must have a branch and a Git worktree checkout folder.
 
-Every sub-feature must have a sub-branch and a sub-folder.
+Every sub-feature must have a sub-branch and a Git worktree checkout folder.
 
 If a sub-feature is still too large, Builder must recursively split it into smaller sub-features until each leaf is small enough to implement, validate, correctness-check, operationally check, security-check as needed, document, and merge safely.
 
-Builder must use the folders and branches to create a workflow called the Feature Branch Workflow.
+Builder must use the branches and Git worktree checkout folders to create a workflow called the Feature Branch Workflow.
 
 Builder must use the correct Feature Branch Workflow when working on the project.
 
-Builder must use the correct active branch and matching folder before modifying project files.
+Builder must work from the correct Git worktree checkout folder for the active branch before modifying project files.
 
 Builder must not code directly on `main`.
 
 Builder must not skip branch creation because the change seems small.
 
-Builder must not skip folder creation because the feature seems simple.
+Builder must not skip Git worktree creation because the feature seems simple.
 
 Builder must not flatten the feature tree merely for convenience.
 
@@ -64,17 +74,33 @@ The branch path must mirror the recursive feature tree.
 
 Branch names must be lowercase, hyphenated, stable, and descriptive.
 
-## Folder Naming Rule
+## Git Worktree Naming Rule
 
-Use this folder pattern:
+Use this Git worktree checkout folder pattern:
 
-- `features/<feature-slug>/`
-- `features/<feature-slug>/<sub-feature-slug>/`
-- `features/<feature-slug>/<sub-feature-slug>/<nested-sub-feature-slug>/`
+- `../worktrees/<repo-slug>/<feature-slug>/`
+- `../worktrees/<repo-slug>/<feature-slug>/<sub-feature-slug>/`
+- `../worktrees/<repo-slug>/<feature-slug>/<sub-feature-slug>/<nested-sub-feature-slug>/`
 
-The folder path must mirror the recursive feature tree and branch path.
+The Git worktree path must mirror the recursive feature tree and branch path.
 
-Each leaf feature folder should contain local notes, slice plans, validation notes, correctness notes, operational notes, security notes, and patch documentation for that leaf.
+Each leaf feature worktree should contain local notes, slice plans, validation notes, correctness notes, operational notes, security notes, and patch documentation for that leaf unless the project has a separately approved documentation path.
+
+## Git Worktree Command Shape
+
+Create feature worktrees with this shape:
+
+- `git worktree add ../worktrees/<repo-slug>/<feature-slug> feature/<feature-slug>`
+
+Create sub-feature worktrees with this shape:
+
+- `git worktree add ../worktrees/<repo-slug>/<feature-slug>/<sub-feature-slug> feature/<feature-slug>/<sub-feature-slug>`
+
+Create nested sub-feature worktrees with this shape:
+
+- `git worktree add ../worktrees/<repo-slug>/<feature-slug>/<sub-feature-slug>/<nested-sub-feature-slug> feature/<feature-slug>/<sub-feature-slug>/<nested-sub-feature-slug>`
+
+Builder must verify the active checkout with `git branch --show-current` or equivalent before modifying files.
 
 ## Recursive Feature Design Duties
 
@@ -83,7 +109,7 @@ Before implementation, Builder must produce:
 - repository name and GitHub remote target
 - recursive feature tree
 - branch map for every feature and sub-feature
-- folder map for every feature and sub-feature
+- Git worktree checkout map for every feature and sub-feature
 - dependency order
 - build order
 - mapped Bacon validation per leaf feature
@@ -136,7 +162,7 @@ Builder must not emit `security_patches_complete` until all required patches hav
 ## Slice Completion Order
 
 1. Confirm the correct feature or sub-feature branch is active.
-2. Confirm the matching feature or sub-feature folder exists.
+2. Confirm the matching Git worktree checkout folder is active.
 3. Implement the approved slice.
 4. Run the mapped Bacon validation.
 5. Check the mapped Hoare correctness obligations.
@@ -151,7 +177,7 @@ For each completed slice, document:
 
 - feature path
 - branch path
-- folder path
+- Git worktree checkout path
 - what changed
 - why it changed
 - what files or components were touched
@@ -197,7 +223,7 @@ Each patch entry must include:
 
 - patch id
 - risk being fixed
-- affected branch and folder
+- affected branch and Git worktree checkout path
 - affected files or components
 - expected behavior change
 - mapped Bacon validation
@@ -213,7 +239,7 @@ Each patch entry must include:
 For each security patch:
 
 1. Check out the correct patch branch or create one under the affected feature or sub-feature branch.
-2. Confirm the matching feature or sub-feature folder exists.
+2. Create or enter the matching Git worktree checkout folder for the patch branch.
 3. Apply the smallest safe patch.
 4. Run the mapped Bacon validation.
 5. Check the mapped Hoare correctness obligations.
@@ -229,7 +255,7 @@ For each security patch:
 For each completed patch, document:
 
 - what vulnerability or weakness was addressed
-- what branch and folder were used
+- what branch and Git worktree checkout folder were used
 - what changed
 - why this patch order was chosen
 - what mapped Bacon validation passed
