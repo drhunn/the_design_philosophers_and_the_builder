@@ -44,11 +44,11 @@ Formal handoffs are TOML. Long-form prose is Markdown linked from TOML. The stat
 
 ## Agent Chain
 
-Socrates bounds the problem. Plato defines the scoped ideal. Aristotle derives structure. Bacon defines proof. Hoare defines correctness. Epictetus defines failure discipline. Diogenes cuts excess. Builder 1986 slices and implements incrementally. Diogenes, Bacon, Hoare, and Epictetus review after build. Parent admits only if the state machine held.
+Socrates bounds the problem. Plato defines the scoped ideal. Aristotle derives structure. Bacon defines proof. Hoare defines correctness. Epictetus defines failure discipline. Diogenes cuts excess. Builder 1986 slices, implements, verifies, then documents each slice as the final slice step. Diogenes, Bacon, Hoare, and Epictetus review after build. Parent admits only if the state machine held.
 
 ## Builder Constraint
 
-Builder must not build the whole design as a lump. Builder must slice it, cost it, order it, implement incrementally, and pass mapped validation, correctness, and operational obligations per slice.
+Builder must not build the whole design as a lump. Builder must slice it, cost it, order it, implement incrementally, and pass mapped validation, correctness, and operational obligations per slice. Documentation is the last part of each slice: after the slice passes its mapped obligations, Builder updates the slice documentation before the slice may emit `implementation_complete`.
 
 ## Required Output Shape
 
