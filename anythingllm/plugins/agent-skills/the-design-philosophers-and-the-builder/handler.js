@@ -10,6 +10,9 @@ const STATES = {
   S6: "S6_BUILD_READY",
   S6A: "S6A_BUILDER_SLICE_PLANNING",
   S7: "S7_IMPLEMENTATION",
+  S7A: "S7A_BUILDER_SECURITY_REVIEW",
+  S7B: "S7B_SECURITY_PATCH_PLANNING",
+  S7C: "S7C_SECURITY_PATCH_IMPLEMENTATION",
   S8: "S8_POST_BUILD_REDUCTION_REVIEW",
   S9: "S9_POST_BUILD_EMPIRICAL_REVIEW",
   S10: "S10_POST_BUILD_CORRECTNESS_REVIEW",
@@ -80,9 +83,25 @@ const TABLE = {
     design_gap_found: t(STATES.S2, ["return_to_aristotle", "require_postmortem"]),
   },
   [STATES.S7]: {
-    implementation_complete: t(STATES.S8, ["run_diogenes_postbuild"]),
+    implementation_complete: t(STATES.S7A, ["run_builder_security_review"]),
     slice_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
     design_gap_found: t(STATES.S2, ["return_to_aristotle", "require_postmortem"]),
+    validation_gap_found: t(STATES.S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+    correctness_gap_found: t(STATES.S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+    operational_gap_found: t(STATES.S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
+  },
+  [STATES.S7A]: {
+    security_review_complete: t(STATES.S7B, ["run_security_patch_planning"]),
+    security_review_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
+    design_gap_found: t(STATES.S2, ["return_to_aristotle", "require_postmortem"]),
+  },
+  [STATES.S7B]: {
+    security_patch_plan_complete: t(STATES.S7C, ["run_security_patch_implementation"]),
+    security_patch_plan_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
+  },
+  [STATES.S7C]: {
+    security_patches_complete: t(STATES.S8, ["run_diogenes_postbuild"]),
+    security_patch_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
     validation_gap_found: t(STATES.S3, ["return_to_bacon_prebuild", "require_postmortem"]),
     correctness_gap_found: t(STATES.S4, ["return_to_hoare_prebuild", "require_postmortem"]),
     operational_gap_found: t(STATES.S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
@@ -118,11 +137,14 @@ const TABLE = {
     excess_complexity_found: t(STATES.S5, ["run_diogenes_prebuild"]),
     slice_plan_failed: t(STATES.S6A, ["run_builder_slice_planning"]),
     slice_failed: t(STATES.S7, ["run_builder_implementation"]),
+    security_review_failed: t(STATES.S7A, ["run_builder_security_review"]),
+    security_patch_plan_failed: t(STATES.S7B, ["run_security_patch_planning"]),
+    security_patch_failed: t(STATES.S7C, ["run_security_patch_implementation"]),
   },
   [STATES.S15]: {
     new_contradiction_found: t(STATES.S1, ["return_to_socrates"]),
     architecture_complete: t(STATES.S2, ["run_aristotle"]),
-    implementation_complete: t(STATES.S8, ["run_diogenes_postbuild"]),
+    implementation_complete: t(STATES.S7A, ["run_builder_security_review"]),
   },
 };
 
@@ -185,9 +207,9 @@ postmortems = []
 function describe() {
   return {
     name: "The Design Philosophers and the Builder",
-    purpose: "A bounded Mealy-style workflow for designing software from scratch without agent drift, user drift, silent scope expansion, or lump-build implementation.",
+    purpose: "A bounded Mealy-style workflow for designing software from scratch with slice implementation, post-build security review, ordered patching, and documentation discipline.",
     packaged_files: ["plugin.json", "handler.js", "README.md", "agents/README.md", "templates/handoff.toml"],
-    chain: ["Socrates", "Plato", "Aristotle", "Bacon", "Hoare", "Epictetus", "Diogenes", "Builder 1986", "Diogenes", "Bacon", "Hoare", "Epictetus", "Parent admission"],
+    chain: ["Socrates", "Plato", "Aristotle", "Bacon", "Hoare", "Epictetus", "Diogenes", "Builder 1986", "Builder security review", "Builder security patch planning", "Builder patch/test/document", "Diogenes", "Bacon", "Hoare", "Epictetus", "Parent admission"],
   };
 }
 
@@ -202,7 +224,7 @@ function routingGuidance(userInput = "") {
       "If it changes invariants or correctness, route to Hoare.",
       "If it changes failure behavior or operational tolerance, route to Epictetus.",
       "If it adds complexity without traceable value, route to Diogenes.",
-      "If it changes implementation inside an approved slice, route to Builder.",
+      "If it changes implementation, slice planning, post-build security review, security patch planning, or security patch implementation inside approved scope, route to Builder.",
     ],
     note: "Guidance only. Classify against the current bounded artifact before dispatching a state-machine event.",
   };
@@ -211,12 +233,12 @@ function routingGuidance(userInput = "") {
 function builderConstraint() {
   return {
     constraint: "Builder is not allowed to build the whole design as a lump.",
-    required_behavior: ["slice it", "cost it", "order it", "implement incrementally", "validate against Bacon", "check against Hoare", "preserve Epictetus operations", "respect Diogenes cuts", "route backward on bounded-artifact failure"],
+    required_behavior: ["slice it", "cost it", "order it", "implement incrementally", "validate against Bacon", "check against Hoare", "preserve Epictetus operations", "respect Diogenes cuts", "document after proof", "run post-build security review", "create ordered security patch list", "patch, test, and document each patch", "route backward on bounded-artifact failure"],
   };
 }
 
 function happyPath() {
-  return ["new_request", "problem_is_clear", "ideal_model_complete", "architecture_complete", "validation_obligations_known", "correctness_obligations_known", "operational_obligations_known", "austerity_review_complete", "build_package_complete", "slice_plan_complete", "implementation_complete", "reduction_review_complete", "empirical_review_passed", "correctness_review_passed", "operations_review_passed", "admission_granted"];
+  return ["new_request", "problem_is_clear", "ideal_model_complete", "architecture_complete", "validation_obligations_known", "correctness_obligations_known", "operational_obligations_known", "austerity_review_complete", "build_package_complete", "slice_plan_complete", "implementation_complete", "security_review_complete", "security_patch_plan_complete", "security_patches_complete", "reduction_review_complete", "empirical_review_passed", "correctness_review_passed", "operations_review_passed", "admission_granted"];
 }
 
 module.exports.runtime = {
