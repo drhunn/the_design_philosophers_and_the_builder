@@ -84,11 +84,14 @@ The AnythingLLM state machine is embedded in `handler.js` so the plugin does not
 6. Epictetus defines operational resilience obligations.
 7. Diogenes cuts excess before build.
 8. Builder 1986 slices, costs, orders, implements, verifies, and then documents each slice.
-9. Diogenes cuts excess after build.
-10. Bacon verifies empirical evidence.
-11. Hoare verifies correctness.
-12. Epictetus verifies resilience.
-13. The parent admits only if the state machine held.
+9. Builder 1986 performs a post-build security review.
+10. Builder 1986 creates a needed security patch list in sensible order.
+11. Builder 1986 patches, tests, and documents each security patch before moving to the next patch.
+12. Diogenes cuts excess after security patching.
+13. Bacon verifies empirical evidence.
+14. Hoare verifies correctness.
+15. Epictetus verifies resilience.
+16. The parent admits only if the state machine held.
 
 ## Builder Slice Rule
 
@@ -105,6 +108,21 @@ Each slice must be completed in this order:
 7. Emit `implementation_complete` only after documentation is updated.
 
 Documentation is the last part of the slice, not an afterthought outside the slice.
+
+## Builder Post-Build Security Rule
+
+After the system is built, Builder must complete this sequence before post-build Diogenes, Bacon, Hoare, and Epictetus reviews:
+
+1. Perform a security review of the implemented system.
+2. Produce a needed security patch list in sensible order.
+3. Apply one security patch at a time.
+4. Test the patch.
+5. Run affected regression checks.
+6. Update patch documentation.
+7. Move to the next patch only after documentation is updated.
+8. Emit `security_patches_complete` only after every required patch is patched, tested, and documented.
+
+Patch order is based on exploitability, blast radius, privilege impact, data exposure risk, dependency order, testability, and operational risk.
 
 ## Artifact Rule
 
