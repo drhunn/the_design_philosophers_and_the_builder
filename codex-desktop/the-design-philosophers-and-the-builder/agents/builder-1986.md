@@ -14,9 +14,13 @@ Workflow means the rules for creating, using, validating, documenting, and mergi
 
 Task slice means one bounded unit of work inside the active Git worktree.
 
+Patch task means one bounded security or corrective patch handled as one task slice inside the correct Git worktree.
+
 Do not confuse workflow with worktree.
 
 Do not confuse a worktree with permission to do a lump build.
+
+Do not confuse a patch list with permission to batch patches.
 
 ## Governing Questions
 
@@ -40,7 +44,7 @@ Security review: After the system is built, what security weaknesses exist in th
 
 Patch planning: What security patches are needed, and what is the safest sensible order to apply them?
 
-Patch execution: For each security patch, what is the smallest safe patch, how is it validated, correctness-checked, operationally checked, tested, and documented?
+Patch execution: For each security patch, what is the single smallest safe patch task, how is it validated, correctness-checked, operationally checked, tested, and documented before the next patch starts?
 
 ## Feature Branch Workflow Rules
 
@@ -181,6 +185,10 @@ The security review must produce a needed patch list in a sensible order.
 
 Security patches must be applied one patch at a time.
 
+Builder must not batch security patches.
+
+One patch means one task slice, one branch/worktree context, one validation cycle, one test cycle, and one documentation update.
+
 Each patch must go through the same discipline as a task slice: mapped Bacon validation, mapped Hoare correctness check, mapped Epictetus operational check, Diogenes cut check, testing, and documentation.
 
 Builder must not emit `security_patches_complete` until all required patches have passed their mapped obligations and patch documentation is updated.
@@ -254,35 +262,72 @@ The patch list must be ordered by:
 
 Each patch entry must include:
 
-- patch id
+- patch task id
 - risk being fixed
-- affected branch and Git worktree checkout path
+- affected feature or sub-feature branch
+- affected Git worktree checkout path
 - affected files or components
 - expected behavior change
+- files allowed to be touched
 - mapped Bacon validation
 - mapped Hoare correctness obligations
 - mapped Epictetus operational obligations
 - mapped Diogenes cut check
-- tests required
+- targeted security tests required
+- affected regression tests required
 - rollback note
 - documentation target
+
+## Patch Worktree Task Rule
+
+Builder must not batch security patches.
+
+Each security patch must have its own patch task id.
+
+Each security patch must belong to an affected feature or sub-feature branch.
+
+Each security patch must use the correct Git worktree checkout folder.
+
+Each security patch must be sliced as one bounded task.
+
+Each security patch must touch only the files required for that patch.
+
+Each security patch must run its own mapped Bacon validation.
+
+Each security patch must check its own mapped Hoare correctness obligations.
+
+Each security patch must check its own mapped Epictetus operational obligations.
+
+Each security patch must confirm Diogenes' cuts were not reintroduced.
+
+Each security patch must run its own targeted security tests.
+
+Each security patch must run its own affected regression tests.
+
+Each security patch must update its own patch documentation.
+
+Builder may start the next patch only after the current patch is validated, checked, tested, and documented.
 
 ## Patch Completion Order
 
 For each security patch:
 
-1. Check out the correct patch branch or create one under the affected feature or sub-feature branch.
-2. Create or enter the matching Git worktree checkout folder for the patch branch.
-3. Treat the patch as one task slice inside that worktree.
-4. Apply the smallest safe patch.
-5. Run the mapped Bacon validation.
-6. Check the mapped Hoare correctness obligations.
-7. Check the mapped Epictetus operational obligations.
-8. Confirm Diogenes' cuts were not reintroduced.
-9. Run targeted security tests.
-10. Run affected regression tests.
-11. Update patch documentation.
-12. Mark that patch complete only after documentation is updated.
+1. Assign one patch task id.
+2. Check out the correct patch branch or create one under the affected feature or sub-feature branch.
+3. Create or enter the matching Git worktree checkout folder for the patch branch.
+4. Confirm the patch belongs to the active feature or sub-feature.
+5. Treat the patch as one task slice inside that worktree.
+6. Touch only the files required for that patch.
+7. Apply the smallest safe patch.
+8. Run the mapped Bacon validation.
+9. Check the mapped Hoare correctness obligations.
+10. Check the mapped Epictetus operational obligations.
+11. Confirm Diogenes' cuts were not reintroduced.
+12. Run targeted security tests.
+13. Run affected regression tests.
+14. Update patch documentation.
+15. Start the next patch only after documentation is updated.
+16. Mark that patch complete only after documentation is updated.
 
 ## Required Patch Documentation
 
@@ -293,12 +338,14 @@ For each completed patch, document:
 - patch task id
 - what changed
 - why this patch order was chosen
+- what files were touched
+- why only those files were touched
 - what mapped Bacon validation passed
 - what mapped Hoare correctness obligations passed
 - what mapped Epictetus operational obligations passed
 - how Diogenes' cuts were preserved
-- what tests passed
-- what regressions were checked
+- what targeted security tests passed
+- what affected regression tests passed
 - what operational behavior changed
 - rollback notes
 - any remaining security work intentionally deferred
