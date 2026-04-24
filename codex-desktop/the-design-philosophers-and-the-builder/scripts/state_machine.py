@@ -16,7 +16,7 @@ S6B = "S6B_BUILDER_FEATURE_WORKTREE_WORKFLOW"
 S6C = "S6C_BUILDER_TASK_SLICE_PLANNING"
 S7 = "S7_TASK_SLICE_IMPLEMENTATION"
 S7A = "S7A_BUILDER_SECURITY_REVIEW"
-S7B = "S7B_SECURITY_PATCH_PLANNING"
+S7B = "S7B_PATCH_PLANNING"
 S7C = "S7C_PATCH_TASK_PLANNING"
 S7D = "S7D_PATCH_TASK_IMPLEMENTATION"
 S8 = "S8_POST_BUILD_REDUCTION_REVIEW"
@@ -99,13 +99,13 @@ TABLE = {
         "branch_worktree_mismatch": (S6B, ["repair_feature_worktree_workflow", "require_postmortem"], None),
     },
     S7A: {
-        "security_review_complete": (S7B, ["run_security_patch_planning"], None),
+        "security_review_complete": (S7B, ["run_patch_planning"], None),
         "security_review_failed": (S14, ["return_to_builder_security_review", "require_postmortem"], None),
         "design_gap_found": (S2, ["return_to_aristotle", "require_postmortem"], None),
     },
     S7B: {
-        "security_patch_plan_complete": (S7C, ["run_patch_task_planning"], None),
-        "security_patch_plan_failed": (S14, ["return_to_security_patch_planning", "require_postmortem"], None),
+        "patch_plan_complete": (S7C, ["run_patch_task_planning"], None),
+        "patch_plan_failed": (S14, ["return_to_patch_planning", "require_postmortem"], None),
     },
     S7C: {
         "patch_task_plan_complete": (S7D, ["run_patch_task_implementation"], "patch_task_plan_complete"),
@@ -155,7 +155,7 @@ TABLE = {
         "task_slice_plan_failed": (S6C, ["run_builder_task_slice_planning"], None),
         "task_slice_failed": (S7, ["run_builder_task_slice_implementation"], None),
         "security_review_failed": (S7A, ["run_builder_security_review"], None),
-        "security_patch_plan_failed": (S7B, ["run_security_patch_planning"], None),
+        "patch_plan_failed": (S7B, ["run_patch_planning"], None),
         "patch_task_plan_failed": (S7C, ["run_patch_task_planning"], None),
         "patch_task_failed": (S7D, ["run_patch_task_implementation"], None),
     },
@@ -206,9 +206,13 @@ def happy_path():
         "build_package_complete",
         "feature_worktree_workflow_complete",
         "task_slice_plan_complete",
+        "task_slice_complete",
+        "task_slice_plan_complete",
         "all_task_slices_complete",
         "security_review_complete",
-        "security_patch_plan_complete",
+        "patch_plan_complete",
+        "patch_task_plan_complete",
+        "patch_task_complete",
         "patch_task_plan_complete",
         "all_patch_tasks_complete",
         "reduction_review_complete",
@@ -224,8 +228,10 @@ def happy_context():
         "build_package_complete": True,
         "feature_worktree_workflow_complete": True,
         "task_slice_plan_complete": True,
+        "task_documentation_updated": True,
         "all_task_slices_complete": True,
         "patch_task_plan_complete": True,
+        "patch_task_documentation_updated": True,
         "all_patch_tasks_complete": True,
         "empirical_review_passed": True,
         "correctness_review_passed": True,
