@@ -6,9 +6,31 @@ This AnythingLLM custom agent skill exposes the Design Philosophers workflow as 
 
 Use it when designing software from scratch, controlling scope drift, routing user changes, producing TOML handoffs, or enforcing smallest-safe-slice implementation.
 
+## Self-Contained Package
+
+This folder is self-contained. It does not depend on repo-root files.
+
+Required local files:
+
+- `plugin.json`
+- `handler.js`
+- `README.md`
+- `agents/README.md`
+- `agents/socrates.md`
+- `agents/plato.md`
+- `agents/aristotle.md`
+- `agents/bacon.md`
+- `agents/hoare.md`
+- `agents/epictetus.md`
+- `agents/diogenes.md`
+- `agents/builder-1986.md`
+- `templates/handoff.toml`
+
+The state machine is embedded directly in `handler.js`.
+
 ## Install
 
-Copy this folder into your AnythingLLM custom agent skills directory:
+Copy the whole folder into your AnythingLLM custom agent skills directory:
 
 `anythingllm/plugins/agent-skills/the-design-philosophers-and-the-builder`
 
