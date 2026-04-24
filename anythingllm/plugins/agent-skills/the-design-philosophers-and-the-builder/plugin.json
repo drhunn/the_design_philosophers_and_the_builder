@@ -1,0 +1,54 @@
+{
+  "active": true,
+  "hubId": "the-design-philosophers-and-the-builder",
+  "name": "The Design Philosophers and the Builder",
+  "schema": "skill-1.0.0",
+  "version": "0.1.0",
+  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, TOML handoffs, and smallest-safe-slice implementation planning.",
+  "author": "@drhunn",
+  "author_url": "https://github.com/drhunn/the_design_philosophers_and_the_builder",
+  "entrypoint": {
+    "file": "handler.js",
+    "params": {
+      "operation": {
+        "description": "Operation to run: describe, available_events, dispatch, happy_path, handoff_template, routing_guidance, or builder_constraint.",
+        "type": "string"
+      },
+      "state": {
+        "description": "Current state, for example S1_PROBLEM_EXAMINATION. Required for available_events and dispatch.",
+        "type": "string"
+      },
+      "event": {
+        "description": "Event to dispatch, for example problem_is_clear. Required for dispatch.",
+        "type": "string"
+      },
+      "context_json": {
+        "description": "Optional JSON object of guard flags, for example {\"build_package_complete\":true}.",
+        "type": "string"
+      },
+      "user_input": {
+        "description": "Optional user request to classify against the current bounded artifact. The handler returns routing guidance, not final judgment.",
+        "type": "string"
+      },
+      "artifact_toml": {
+        "description": "Optional current TOML handoff artifact or summary used for context by the calling agent.",
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "prompt": "Start the design philosophers workflow for a new software idea.",
+      "call": "{\"operation\":\"dispatch\",\"state\":\"S0_INTAKE\",\"event\":\"new_request\"}"
+    },
+    {
+      "prompt": "What events are legal from Plato's scoped ideal state?",
+      "call": "{\"operation\":\"available_events\",\"state\":\"S1A_SCOPED_IDEAL_MODEL\"}"
+    },
+    {
+      "prompt": "Give me the formal handoff template.",
+      "call": "{\"operation\":\"handoff_template\"}"
+    }
+  ],
+  "imported": true
+}
