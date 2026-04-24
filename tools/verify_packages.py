@@ -157,6 +157,17 @@ def check_toml(errors: list[str], path: Path) -> None:
         fail(errors, f"invalid TOML {path.relative_to(ROOT)}: {exc}")
 
 
+def check_license(errors: list[str]) -> None:
+    path = ROOT / "LICENSE"
+    require_file(errors, path)
+    if not path.is_file():
+        return
+    text = path.read_text(encoding="utf-8")
+    for marker in ["MIT License", "Copyright (c) 2026 Danny Hunn", "THE SOFTWARE IS PROVIDED \"AS IS\""]:
+        if marker not in text:
+            fail(errors, f"LICENSE missing marker: {marker}")
+
+
 def check_python_machine(errors: list[str], path: Path) -> None:
     require_file(errors, path)
     if not path.is_file():
@@ -226,6 +237,7 @@ def check_anythingllm(errors: list[str]) -> None:
 
 def main() -> int:
     errors: list[str] = []
+    check_license(errors)
     check_package_common(errors, CODEX, skill=True)
     check_package_common(errors, CLAUDE, skill=True)
     check_anythingllm(errors)
