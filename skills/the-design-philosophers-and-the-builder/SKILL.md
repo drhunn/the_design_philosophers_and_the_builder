@@ -1,6 +1,9 @@
 ---
-name: the-design-philosophers-and-the-builder
-description: Use this Windows 11 Codex Desktop skill when designing software from scratch with a bounded Mealy-style workflow: Socrates scopes the real problem, Plato defines the ideal, Aristotle designs structure, Bacon defines proof, Hoare defines correctness, Epictetus defines failure discipline, Diogenes cuts excess, and Builder 1986 slices and implements incrementally using TOML handoffs.
+name: "the-design-philosophers-and-the-builder"
+description: >-
+  Windows 11 Codex Desktop skill for designing software from scratch with a
+  bounded Mealy-style workflow using philosopher agents, Builder 1986, TOML
+  handoffs, and an embedded Python state machine.
 ---
 
 # The Design Philosophers and the Builder
