@@ -31,12 +31,34 @@ BUILDER_REQUIRED_MARKERS = [
     "Feature Branch Workflow",
     "recursively identify and list the sub-features",
     "create or initialize the GitHub repository",
-    "feature/<feature-slug>",
-    "features/<feature-slug>/",
+    "Git cannot safely hold both `feature/foo` and `feature/foo/bar` as branches",
+    "subfeature/<feature-slug>--<sub-feature-path-slug>",
+    "task/<feature-slug>--<sub-feature-path-slug>--<task-slug>",
+    "patch/<feature-slug>--<sub-feature-path-slug>--<patch-id>",
+    "Do not nest Git worktrees inside other Git worktrees",
+    "../worktrees/<repo-slug>/feature--<feature-slug>/",
+    "../worktrees/<repo-slug>/subfeature--<feature-slug>--<sub-feature-path-slug>/",
     "Run the mapped Bacon validation",
     "Check the mapped Hoare correctness obligations",
     "Check the mapped Epictetus operational obligations",
     "Confirm Diogenes' cuts were not reintroduced",
+    "Builder must not batch patches",
+    "Emit `task_slice_complete` only after documentation is updated",
+    "Emit `patch_task_complete` only after documentation is updated",
+]
+
+STATE_MACHINE_MARKERS = [
+    "S6B_BUILDER_FEATURE_WORKTREE_WORKFLOW",
+    "S6C_BUILDER_TASK_SLICE_PLANNING",
+    "S7_TASK_SLICE_IMPLEMENTATION",
+    "S7B_PATCH_PLANNING",
+    "S7C_PATCH_TASK_PLANNING",
+    "S7D_PATCH_TASK_IMPLEMENTATION",
+    "task_slice_complete",
+    "task_documentation_updated",
+    "patch_plan_complete",
+    "patch_task_complete",
+    "patch_task_documentation_updated",
 ]
 
 PY_HAPPY_PATH_SNIPPET = """
@@ -47,9 +69,13 @@ spec = importlib.util.spec_from_file_location('state_machine_under_test', p)
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 m = mod.Machine(context=mod.happy_context())
+visited = []
 for event in mod.happy_path():
+    visited.append(event)
     m.dispatch(event)
 assert m.state == mod.S13, m.state
+for required in ['task_slice_complete', 'patch_task_complete', 'patch_plan_complete']:
+    assert required in visited, f'missing loop event: {required}'
 print('ok')
 """
 
@@ -66,8 +92,12 @@ const plugin = require(process.argv[2]);
   const builder = await runtime.handler.call({}, {operation: 'builder_constraint'});
   const parsedBuilder = JSON.parse(builder);
   const serialized = JSON.stringify(parsedBuilder);
-  for (const marker of ['Feature Branch Workflow', 'mapped Bacon validation', 'mapped Hoare correctness', 'mapped Epictetus operational', 'Diogenes cuts']) {
+  for (const marker of ['Feature Branch Workflow', 'mapped Bacon validation', 'mapped Hoare correctness', 'mapped Epictetus operational', 'Diogenes cuts', 'subfeature/<feature-slug>--<sub-feature-path-slug>', 'do not nest Git worktrees', 'never batch patches']) {
     if (!serialized.includes(marker)) throw new Error(`builder constraint missing marker: ${marker}`);
+  }
+  const happy = JSON.parse(await runtime.handler.call({}, {operation: 'happy_path'}));
+  for (const event of ['task_slice_complete', 'patch_task_complete', 'patch_plan_complete']) {
+    if (!happy.events.includes(event)) throw new Error(`happy path missing event: ${event}`);
   }
   console.log('ok');
 })();
@@ -131,6 +161,7 @@ def check_python_machine(errors: list[str], path: Path) -> None:
     require_file(errors, path)
     if not path.is_file():
         return
+    check_contains(errors, path, STATE_MACHINE_MARKERS)
     script = PY_HAPPY_PATH_SNIPPET.format(path=str(path))
     result = subprocess.run([sys.executable, "-c", script], cwd=ROOT, text=True, capture_output=True)
     if result.returncode != 0:
@@ -141,6 +172,7 @@ def check_node_handler(errors: list[str], path: Path) -> None:
     require_file(errors, path)
     if not path.is_file():
         return
+    check_contains(errors, path, STATE_MACHINE_MARKERS)
     node = "node.exe" if os.name == "nt" else "node"
     try:
         subprocess.run([node, "--version"], text=True, capture_output=True, check=True)
