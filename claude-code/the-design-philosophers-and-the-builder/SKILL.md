@@ -1,14 +1,14 @@
 ---
 name: "the-design-philosophers-and-the-builder"
 description: >-
-  Use this skill when designing software from scratch and you need a bounded Mealy-style workflow that prevents agent drift, user drift, silent scope expansion, lump-build implementation, missing Feature Branch Workflow backed by Git worktrees, missing one-task-at-a-time worktree slicing, and missing post-build security patch discipline.
+  Use this skill when designing software from scratch and you need a bounded Mealy-style workflow that prevents agent drift, user drift, silent scope expansion, lump-build implementation, missing Feature Branch Workflow backed by Git worktrees, missing one-task-at-a-time worktree slicing, and missing one-patch-at-a-time post-build security patch discipline.
 ---
 
 # The Design Philosophers and the Builder
 
 ## Purpose
 
-Use this skill in Claude Code when designing software from scratch, turning a vague idea into a buildable system, reviewing scope changes, forcing implementation through smallest safe build slices, enforcing Feature Branch Workflow backed by Git worktrees, slicing work inside each worktree into one task at a time, or requiring post-build security review and patching.
+Use this skill in Claude Code when designing software from scratch, turning a vague idea into a buildable system, reviewing scope changes, forcing implementation through smallest safe build slices, enforcing Feature Branch Workflow backed by Git worktrees, slicing work inside each worktree into one task at a time, or requiring post-build security review and one-patch-at-a-time patching.
 
 Current state plus event determines next state plus action.
 
@@ -44,7 +44,7 @@ Formal handoffs are TOML. Long-form prose is Markdown linked from TOML. The stat
 
 ## Agent Chain
 
-Socrates bounds the problem. Plato defines the scoped ideal. Aristotle derives structure. Bacon defines proof. Hoare defines correctness. Epictetus defines failure discipline. Diogenes cuts excess. Builder 1986 creates or initializes the GitHub repo, recursively identifies features and sub-features, creates matching branches and Git worktree checkout folders, uses the Feature Branch Workflow, slices each worktree into one task at a time, implements, verifies, then documents each task slice as the final task step. After the built system exists, Builder 1986 performs a security review, creates a needed patch list in sensible order, and applies each security patch one patch-task at a time with patch, Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, testing, and documentation discipline. Diogenes, Bacon, Hoare, and Epictetus review after security patching. Parent admits only if the state machine held.
+Socrates bounds the problem. Plato defines the scoped ideal. Aristotle derives structure. Bacon defines proof. Hoare defines correctness. Epictetus defines failure discipline. Diogenes cuts excess. Builder 1986 creates or initializes the GitHub repo, recursively identifies features and sub-features, creates matching branches and Git worktree checkout folders, uses the Feature Branch Workflow, slices each worktree into one task at a time, implements, verifies, then documents each task slice as the final task step. After the built system exists, Builder 1986 performs a security review, creates a needed patch list in sensible order, and applies each security patch one patch-task at a time with its own branch/worktree context, Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, targeted security tests, affected regression tests, and documentation update. Diogenes, Bacon, Hoare, and Epictetus review after security patching. Parent admits only if the state machine held.
 
 ## Builder Constraint
 
@@ -54,7 +54,7 @@ Builder must use the correct Feature Branch Workflow when working on the project
 
 Inside each Git worktree, Builder must slice work into one task at a time. Builder must identify the next single task, confirm it belongs to the active feature or sub-feature, implement only that task, run mapped Bacon validation, check mapped Hoare correctness, check mapped Epictetus operational behavior, confirm Diogenes cuts were not reintroduced, run mapped tests, document the task, and only then start the next task.
 
-After implementation is complete, Builder must run a security review, produce a needed security patch list in sensible order, then patch one patch at a time in the correct branch and Git worktree checkout folder. Each patch is treated as one task slice and must run mapped Bacon validation, mapped Hoare correctness checks, mapped Epictetus operational checks, Diogenes cut checks, targeted security tests, affected regression tests, and patch documentation before moving on. Builder may emit `security_patches_complete` only after every required patch has passed those gates and documentation is updated.
+Builder must not batch security patches. After implementation is complete, Builder must run a security review, produce a needed security patch list in sensible order, then patch one patch at a time in the correct branch and Git worktree checkout folder. Each patch is one patch task: one bounded task slice, one branch/worktree context, one validation cycle, one test cycle, and one documentation update. Each patch must run its own mapped Bacon validation, mapped Hoare correctness checks, mapped Epictetus operational checks, Diogenes cut checks, targeted security tests, affected regression tests, and patch documentation before moving on. Builder may emit `security_patches_complete` only after every required patch has passed those gates and documentation is updated.
 
 ## Required Output Shape
 
