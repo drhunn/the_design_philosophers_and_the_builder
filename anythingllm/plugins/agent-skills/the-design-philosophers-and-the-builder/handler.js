@@ -207,9 +207,9 @@ postmortems = []
 function describe() {
   return {
     name: "The Design Philosophers and the Builder",
-    purpose: "A bounded Mealy-style workflow for designing software from scratch with slice implementation, post-build security review, ordered patching, and documentation discipline.",
+    purpose: "A bounded Mealy-style workflow for designing software from scratch with Feature Branch Workflow, slice implementation, post-build security review, ordered patching, and documentation discipline.",
     packaged_files: ["plugin.json", "handler.js", "README.md", "agents/README.md", "templates/handoff.toml"],
-    chain: ["Socrates", "Plato", "Aristotle", "Bacon", "Hoare", "Epictetus", "Diogenes", "Builder 1986", "Builder security review", "Builder security patch planning", "Builder patch/test/document", "Diogenes", "Bacon", "Hoare", "Epictetus", "Parent admission"],
+    chain: ["Socrates", "Plato", "Aristotle", "Bacon", "Hoare", "Epictetus", "Diogenes", "Builder Feature Branch Workflow", "Builder 1986", "Builder security review", "Builder security patch planning", "Builder patch/validate/check/test/document", "Diogenes", "Bacon", "Hoare", "Epictetus", "Parent admission"],
   };
 }
 
@@ -224,7 +224,7 @@ function routingGuidance(userInput = "") {
       "If it changes invariants or correctness, route to Hoare.",
       "If it changes failure behavior or operational tolerance, route to Epictetus.",
       "If it adds complexity without traceable value, route to Diogenes.",
-      "If it changes implementation, slice planning, post-build security review, security patch planning, or security patch implementation inside approved scope, route to Builder.",
+      "If it changes repository setup, recursive feature decomposition, branch workflow, folder workflow, implementation, slice planning, post-build security review, security patch planning, or security patch implementation inside approved scope, route to Builder.",
     ],
     note: "Guidance only. Classify against the current bounded artifact before dispatching a state-machine event.",
   };
@@ -233,7 +233,35 @@ function routingGuidance(userInput = "") {
 function builderConstraint() {
   return {
     constraint: "Builder is not allowed to build the whole design as a lump.",
-    required_behavior: ["slice it", "cost it", "order it", "implement incrementally", "validate against Bacon", "check against Hoare", "preserve Epictetus operations", "respect Diogenes cuts", "document after proof", "run post-build security review", "create ordered security patch list", "patch, test, and document each patch", "route backward on bounded-artifact failure"],
+    required_behavior: [
+      "create or initialize the GitHub repository",
+      "recursively identify and list sub-features for each feature",
+      "create a branch for each feature",
+      "create a sub-branch for each sub-feature",
+      "create a folder for each feature",
+      "create a sub-folder for each sub-feature",
+      "use folders and branches as the Feature Branch Workflow",
+      "use the correct Feature Branch Workflow when working on the project",
+      "do not code directly on main",
+      "slice it",
+      "cost it",
+      "order it",
+      "implement incrementally",
+      "run mapped Bacon validation",
+      "check mapped Hoare correctness obligations",
+      "check mapped Epictetus operational obligations",
+      "confirm Diogenes cuts were not reintroduced",
+      "document after proof",
+      "run post-build security review",
+      "create ordered security patch list",
+      "patch one patch at a time",
+      "run mapped Bacon validation for each patch",
+      "check mapped Hoare correctness obligations for each patch",
+      "check mapped Epictetus operational obligations for each patch",
+      "confirm Diogenes cuts were not reintroduced by each patch",
+      "test and document each patch",
+      "route backward on bounded-artifact failure"
+    ],
   };
 }
 
