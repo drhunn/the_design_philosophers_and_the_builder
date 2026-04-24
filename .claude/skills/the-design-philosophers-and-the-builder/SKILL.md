@@ -1,35 +1,68 @@
 ---
 name: "the-design-philosophers-and-the-builder"
 description: >-
-  Use this skill when designing software from scratch with a bounded
-  Mealy-style workflow. It routes work through Socrates, Plato, Aristotle,
-  Bacon, Hoare, Epictetus, Diogenes, and Builder 1986 using TOML handoffs,
-  Markdown reports, and smallest-safe-slice implementation.
+  Use this skill when designing software from scratch and you need a bounded
+  Mealy-style workflow that prevents agent drift, user drift, silent scope
+  expansion, and lump-build implementation. Routes work through Socrates,
+  Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986 using
+  TOML handoffs.
 ---
 
 # The Design Philosophers and the Builder
 
 ## Purpose
 
-Use this skill when a user wants to design software from scratch, turn a vague idea into a buildable system, prevent user or agent drift, or force implementation through smallest safe build slices.
+Use this skill in Claude Code when designing software from scratch, turning a vague idea into a buildable system, reviewing scope changes, or forcing implementation through smallest safe build slices.
 
 This is a bounded Mealy-style control system.
-
-The governing rule is:
 
 Current state plus event determines next state plus action.
 
 No silent expansion. No lump builds. No hidden handoffs. No agent drift. No user drift. No "while we are here."
 
-## Artifact Rule
+## Claude Code Installation
 
-Formal handoffs are TOML.
+Install as a project skill:
 
-Long-form reasoning, analysis, reports, and postmortems are Markdown.
+`.claude/skills/the-design-philosophers-and-the-builder/SKILL.md`
 
-The TOML handoff is authoritative for routing.
+Or install as a user skill on Windows 11:
 
-Markdown is supporting documentation and should be linked from TOML.
+`%USERPROFILE%\.claude\skills\the-design-philosophers-and-the-builder\SKILL.md`
+
+Recommended PowerShell install from this repository:
+
+```powershell
+$SkillName = "the-design-philosophers-and-the-builder"
+$Source = ".\.claude\skills\$SkillName"
+$Dest = Join-Path $env:USERPROFILE ".claude\skills\$SkillName"
+New-Item -ItemType Directory -Force -Path $Dest | Out-Null
+Copy-Item -Path "$Source\*" -Destination $Dest -Recurse -Force
+Write-Host "Installed $SkillName to $Dest"
+Write-Host "Restart Claude Code to reload skills."
+```
+
+## State Machine Source
+
+The Python state-machine implementation is in:
+
+`scripts/state_machine.py`
+
+The TOML handoff template is in:
+
+`templates/handoff.toml`
+
+Use those files as the authoritative machine-readable implementation and handoff shape.
+
+## Formal Artifact Rule
+
+Formal state handoffs must be TOML.
+
+Markdown is for linked long-form prose only.
+
+The state machine consumes TOML, not Markdown.
+
+Do not embed long reasoning in TOML. Link Markdown reports from TOML.
 
 ## State Owners
 
@@ -48,39 +81,11 @@ Markdown is supporting documentation and should be linked from TOML.
 - S11 Post-Build Operational Resilience Review: Epictetus
 - S12 Admission Decision: Parent
 
-## Agent Chain
-
-Socrates bounds the real problem.
-
-Plato defines the scoped ideal and hard product constraints.
-
-Aristotle derives structure.
-
-Bacon defines proof.
-
-Hoare defines correctness.
-
-Epictetus defines failure discipline.
-
-Diogenes cuts excess before build.
-
-Builder 1986 slices, costs, orders, and implements incrementally.
-
-Diogenes cuts excess after build.
-
-Bacon verifies evidence.
-
-Hoare verifies correctness.
-
-Epictetus verifies operational resilience.
-
-The parent admits only if the state machine held.
-
 ## Routing Rules
 
 If a user request changes the real problem, route to Socrates.
 
-If it changes ideal form, value, platform, deployment, integration, trust model, data ownership, scale, or version-one boundary, route to Plato.
+If it changes ideal form, value, platform, deployment, integration, trust model, data ownership, scale, or v1 boundary, route to Plato.
 
 If it changes structure, route to Aristotle.
 
@@ -98,37 +103,41 @@ If it changes implementation inside an approved slice, route to Builder.
 
 Builder is not allowed to build the whole design as a lump.
 
-Builder must slice it, cost it, order it, and implement it incrementally.
+Builder must slice it, cost it, order it, and implement incrementally.
 
 A slice is not done because code exists.
 
 A slice is done only when it satisfies mapped validation, correctness, and operational obligations.
 
-## Supporting Files
+## Claude Code Behavior
 
-Use these supporting files when needed:
-
-- `scripts/state_machine.py` contains the Python Mealy state machine.
-- `templates/handoff.toml` contains the formal TOML handoff template.
-- `docs/workflow.md` contains the full workflow explanation.
-
-## Operating Instructions
-
-When this skill triggers:
+When this skill triggers, Claude should:
 
 1. Determine the current state.
-2. Classify the user's input against the current bounded artifact.
-3. Emit only a valid event for the current state.
-4. Produce a TOML handoff for formal transitions.
-5. Link Markdown reports for long-form reasoning.
+2. Classify new user input against the current bounded artifact.
+3. Emit only valid events for the current state.
+4. Produce TOML handoffs for formal transitions.
+5. Use linked Markdown for long reports.
 6. Refuse silent scope expansion.
 7. Enforce Builder slice planning before implementation.
+8. Route backward instead of guessing when a prior boundary is incomplete.
 
-## Installation Notes
+## Trigger Phrases
 
-For Claude Code, place this folder at either:
+Use this skill when the user says things like:
 
-- `%USERPROFILE%\.claude\skills\the-design-philosophers-and-the-builder\`
-- `<repo>\.claude\skills\the-design-philosophers-and-the-builder\`
+- design software from scratch
+- use the philosophers
+- use the design philosophers
+- run the Mealy state machine
+- keep the design bounded
+- prevent scope drift
+- slice the implementation
+- no lump builds
+- use Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder
 
-Restart Claude Code after changing skills.
+## Required Output Shape
+
+For formal handoff, write TOML matching `templates/handoff.toml`.
+
+For long-form rationale, write Markdown and link it from the TOML handoff.
