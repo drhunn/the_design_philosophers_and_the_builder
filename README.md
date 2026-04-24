@@ -280,3 +280,7 @@ tools/                package verification and maintenance tools
 ## Maintenance Rule
 
 The three runtime packages are intentionally self-contained. When changing behavior, update all runtime packages or run `tools/verify_packages.py` and fix drift before considering the work complete.
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE`.
