@@ -28,9 +28,7 @@ const STATES = {
   S15: "S15_EXPLORATORY",
 };
 
-function t(to, actions = [], guard = null) {
-  return { to, actions, guard };
-}
+function t(to, actions = [], guard = null) { return { to, actions, guard }; }
 
 const TABLE = {
   [STATES.S0]: { new_request: t(STATES.S1, ["run_socrates"]) },
@@ -40,7 +38,7 @@ const TABLE = {
     prototype_only: t(STATES.S15, ["allow_prototype", "mark_exploratory_only"]),
   },
   [STATES.S1A]: {
-    ideal_model_complete: t(STATES.S2, ["run_aristotle"]),
+    ideal_model_complete: t(STATES.S2, ["run_aristotle"], "prd_markdown_linked"),
     new_contradiction_found: t(STATES.S1, ["return_to_socrates"]),
   },
   [STATES.S2]: {
@@ -77,18 +75,29 @@ const TABLE = {
   [STATES.S6B]: {
     feature_worktree_workflow_complete: t(STATES.S6C, ["run_builder_task_slice_planning"], "feature_worktree_workflow_complete"),
     feature_worktree_workflow_failed: t(STATES.S14, ["return_to_builder_feature_worktree_workflow", "require_postmortem"]),
+    feature_inventory_mismatch: t(STATES.S1A, ["return_to_plato", "require_postmortem"]),
     branch_worktree_mismatch: t(STATES.S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
+    validation_mapping_failed: t(STATES.S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+    correctness_mapping_failed: t(STATES.S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+    operational_mapping_failed: t(STATES.S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
   },
   [STATES.S6C]: {
     task_slice_plan_complete: t(STATES.S7, ["run_builder_task_slice_implementation"], "task_slice_plan_complete"),
     task_slice_plan_failed: t(STATES.S14, ["return_to_task_slice_planning", "require_postmortem"]),
     no_remaining_task_slices: t(STATES.S7A, ["run_builder_security_review"], "no_remaining_task_slices"),
     branch_worktree_mismatch: t(STATES.S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
+    validation_mapping_failed: t(STATES.S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+    correctness_mapping_failed: t(STATES.S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+    operational_mapping_failed: t(STATES.S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
   },
   [STATES.S7]: {
     task_slice_complete: t(STATES.S6C, ["run_builder_task_slice_planning"], "task_documentation_updated"),
     all_task_slices_complete: t(STATES.S7A, ["run_builder_security_review"], "all_task_slices_complete"),
     task_slice_failed: t(STATES.S14, ["return_to_builder_task_slice", "require_postmortem"]),
+    design_gap_found: t(STATES.S2, ["return_to_aristotle", "require_postmortem"]),
+    validation_gap_found: t(STATES.S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+    correctness_gap_found: t(STATES.S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+    operational_gap_found: t(STATES.S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
     branch_worktree_mismatch: t(STATES.S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
   },
   [STATES.S7A]: {
@@ -110,6 +119,9 @@ const TABLE = {
     patch_task_complete: t(STATES.S7C, ["run_patch_task_planning"], "patch_task_documentation_updated"),
     all_patch_tasks_complete: t(STATES.S8, ["run_diogenes_postbuild"], "all_patch_tasks_complete"),
     patch_task_failed: t(STATES.S14, ["return_to_patch_task_implementation", "require_postmortem"]),
+    validation_gap_found: t(STATES.S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+    correctness_gap_found: t(STATES.S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+    operational_gap_found: t(STATES.S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
     branch_worktree_mismatch: t(STATES.S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
   },
   [STATES.S8]: {
@@ -153,6 +165,7 @@ const TABLE = {
 };
 
 const PROOF_GUARDS = new Set([
+  "prd_markdown_linked",
   "feature_worktree_workflow_complete",
   "task_slice_plan_complete",
   "task_documentation_updated",
@@ -163,8 +176,8 @@ const PROOF_GUARDS = new Set([
   "all_patch_tasks_complete",
   "no_remaining_patch_tasks",
 ]);
-
-const REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "changelog"];
+const WORKTREE_PROOF_GUARDS = new Set([...PROOF_GUARDS].filter(g => g !== "prd_markdown_linked"));
+const REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "changelog", "markdown_links"];
 
 const ACTION_AGENT_FILES = {
   run_socrates: "socrates.md", return_to_socrates: "socrates.md",
@@ -183,7 +196,6 @@ const ACTION_AGENT_FILES = {
   run_patch_task_implementation: "builder-1986.md", return_to_patch_task_implementation: "builder-1986.md",
   return_to_builder: "builder-1986.md",
 };
-
 const CONTROLLER_ACTIONS = new Set(["allow_prototype", "mark_exploratory_only", "check_build_package", "make_admission_decision", "accept_feature", "require_postmortem"]);
 
 function parseContext(contextJson) { if (!contextJson) return {}; if (typeof contextJson === "object") return contextJson; try { return JSON.parse(contextJson); } catch (_err) { return {}; } }
@@ -193,18 +205,28 @@ function parseValue(raw) { const v = raw.trim(); if (v === "true") return true; 
 function parseTomlLoose(text) { const out = {}; let section = null; for (const line of String(text || "").split(/\r?\n/)) { const trimmed = line.trim(); if (!trimmed || trimmed.startsWith("#")) continue; const m = trimmed.match(/^\[([^\]]+)\]$/); if (m) { section = m[1]; out[section] = out[section] || {}; continue; } const idx = trimmed.indexOf("="); if (idx < 0) continue; const key = trimmed.slice(0, idx).trim(); const value = parseValue(trimmed.slice(idx + 1)); if (section) out[section][key] = value; else out[key] = value; } return out; }
 function subset(touched, allowed) { if (!Array.isArray(touched) || touched.length === 0) return true; return Array.isArray(allowed) && allowed.length > 0 && touched.every(f => allowed.includes(f)); }
 
-function validateHandoffObject(handoff, guard = "task_documentation_updated") {
+function validateChangelog(changelog) {
   const errors = [];
-  for (const s of REQUIRED_SECTIONS) if (!handoff || typeof handoff[s] !== "object") errors.push(`missing [${s}] section`);
-  const git = handoff.git || {}, task = handoff.task || {}, patch = handoff.patch || {}, validation = handoff.validation || {}, docs = handoff.documentation || {}, remaining = handoff.remaining_work || {}, changelog = handoff.changelog || {};
-  if (typeof changelog.repo_changed !== "boolean") errors.push("[changelog].repo_changed must explicitly be true or false");
+  if (typeof changelog.repo_changed !== "boolean") {
+    errors.push("[changelog].repo_changed must explicitly be true or false");
+    return errors;
+  }
   if (changelog.repo_changed === true) {
     if (changelog.required !== true) errors.push("[changelog].required must be true when repo_changed is true");
     if (changelog.updated !== true) errors.push("[changelog].updated must be true when repo_changed is true");
     for (const k of ["date_time", "scope", "summary", "path"]) if (!present(changelog[k])) errors.push(`[changelog].${k} is required when repo_changed is true`);
     if (!present(changelog.commit_or_merge_hash) && changelog.pending_hash !== true) errors.push("[changelog].commit_or_merge_hash is required unless pending_hash is true");
   }
-  if (PROOF_GUARDS.has(guard)) {
+  return errors;
+}
+
+function validateHandoffObject(handoff, guard = "task_documentation_updated") {
+  const errors = [];
+  for (const s of REQUIRED_SECTIONS) if (!handoff || typeof handoff[s] !== "object") errors.push(`missing [${s}] section`);
+  const git = handoff.git || {}, task = handoff.task || {}, patch = handoff.patch || {}, validation = handoff.validation || {}, docs = handoff.documentation || {}, remaining = handoff.remaining_work || {}, changelog = handoff.changelog || {}, links = handoff.markdown_links || {};
+  errors.push(...validateChangelog(changelog));
+  if (guard === "prd_markdown_linked" && !present(links.prd)) errors.push("[markdown_links].prd must link the PRD Markdown file before ideal_model_complete");
+  if (WORKTREE_PROOF_GUARDS.has(guard)) {
     for (const k of ["active_branch", "worktree_path", "merge_target"]) if (!present(git[k])) errors.push(`[git].${k} is required`);
     if (git.branch_is_collision_free !== true) errors.push("[git].branch_is_collision_free must be true");
     if (git.worktree_is_flat_sibling !== true) errors.push("[git].worktree_is_flat_sibling must be true");
@@ -232,8 +254,8 @@ function handoffTemplate() {
   return `artifact_id = ""\nstate = ""\nagent = ""\nemitted_event = ""\nnext_state = ""\n\n[bounded_input]\nreferences = []\nsummary = ""\n\n[scope_boundary]\nsummary = ""\nallowed = []\nforbidden = []\n\n[git]\nrepository = ""\nremote = ""\nbase_branch = "main"\nactive_branch = ""\nbranch_namespace = ""\nbranch_is_collision_free = false\nworktree_path = ""\nworktree_is_flat_sibling = false\nworktree_verified = false\nmerge_target = ""\nmerge_path = []\n\n[task]\ntask_id = ""\nfeature_slug = ""\nsubfeature_path_slug = ""\ntask_slug = ""\npurpose = ""\nstatus = "not_started"\ntouched_files = []\nallowed_files = []\nexpected_behavior = ""\n\n[patch]\npatch_task_id = ""\npatch_id = ""\nkind = ""\nrisk_or_defect = ""\naffected_branch = ""\naffected_worktree_path = ""\nmerge_target = ""\nmerge_path = []\nallowed_files = []\ntouched_files = []\nstatus = "not_started"\n\n[validation]\nbacon_checks = []\nbacon_passed = false\nhoare_obligations = []\nhoare_passed = false\nepictetus_obligations = []\nepictetus_passed = false\ndiogenes_cut_check = ""\ndiogenes_passed = false\ntargeted_tests = []\nregression_tests = []\ntests_passed = false\n\n[documentation]\ntask_documentation_path = ""\ntask_documentation_updated = false\npatch_documentation_path = ""\npatch_documentation_updated = false\npostmortem_paths = []\n\n[remaining_work]\nremaining_task_slices = []\nremaining_patch_tasks = []\nno_remaining_task_slices = false\nno_remaining_patch_tasks = false\n\n[findings]\nsummary = ""\n\n[decisions]\nsummary = ""\nitems = []\n\n[assumptions]\nitems = []\n\n[unresolved_issues]\nitems = []\nblocking = false\n\n[changelog]\nrepo_changed = false\nrequired = false\nupdated = false\ndate_time = ""\nscope = ""\nsummary = ""\ncommit_or_merge_hash = ""\npending_hash = false\npath = "CHANGELOG.md"\nreason = ""\n\n[markdown_links]\nprd = []\nreports = []\nrationale = []\npostmortems = []\n`;
 }
 
-function describe() { return { name: "The Design Philosophers and the Builder", purpose: "Bounded Mealy workflow with proof-carrying TOML handoffs, explicit changelog decisions, PRD Markdown from Plato, one-task slices, one-patch patch tasks, and fixed action-to-agent dispatch.", operations: ["describe", "available_events", "dispatch", "dispatch_and_load", "resolve_actions", "load_actions", "happy_path", "handoff_template", "validate_handoff", "routing_guidance", "builder_constraint"] }; }
-function routingGuidance(userInput = "") { return { user_input: userInput, guidance: ["If it changes the real problem, route to Socrates.", "If it changes PRD/product form, route to Plato.", "If it changes structure, route to Aristotle.", "If it changes evidence or validation, route to Bacon.", "If it changes invariants or correctness, route to Hoare.", "If it changes failure behavior or operational tolerance, route to Epictetus.", "If it changes repository setup, feature worktree workflow, task slicing, or patch task implementation, route to Builder."], note: "Every handoff must explicitly set [changelog].repo_changed to true or false. Pure analysis may set false. Repository changes require changelog evidence." }; }
+function describe() { return { name: "The Design Philosophers and the Builder", purpose: "Bounded Mealy workflow with proof-carrying TOML handoffs, explicit changelog decisions, guarded PRD Markdown handoff from Plato, one-task slices, one-patch patch tasks, and fixed action-to-agent dispatch.", operations: ["describe", "available_events", "dispatch", "dispatch_and_load", "resolve_actions", "load_actions", "happy_path", "handoff_template", "validate_handoff", "routing_guidance", "builder_constraint"] }; }
+function routingGuidance(userInput = "") { return { user_input: userInput, guidance: ["If it changes the real problem, route to Socrates.", "If it changes PRD/product form, route to Plato.", "If it changes structure, route to Aristotle.", "If it changes evidence or validation, route to Bacon.", "If it changes invariants or correctness, route to Hoare.", "If it changes failure behavior or operational tolerance, route to Epictetus.", "If it changes repository setup, feature worktree workflow, task slicing, or patch task implementation, route to Builder."], note: "Every handoff must explicitly set [changelog].repo_changed to true or false. ideal_model_complete also requires [markdown_links].prd." }; }
 function builderConstraint() { return { constraint: "Builder is not allowed to build the whole design as a lump.", required_behavior: ["Feature Branch Workflow", "create or initialize the GitHub repository", "do not create parent and child refs in the same Git namespace", "use branch pattern subfeature/<feature-slug>--<sub-feature-path-slug>", "do not nest Git worktrees inside other Git worktrees", "run mapped Bacon validation", "check mapped Hoare correctness obligations", "check mapped Epictetus operational obligations", "confirm Diogenes cuts were not reintroduced", "document before next task", "document before next patch", "record changelog decision", "never batch patches"] }; }
 function happyPath() { return ["new_request", "problem_is_clear", "ideal_model_complete", "architecture_complete", "validation_obligations_known", "correctness_obligations_known", "operational_obligations_known", "austerity_review_complete", "build_package_complete", "feature_worktree_workflow_complete", "task_slice_plan_complete", "task_slice_complete", "task_slice_plan_complete", "all_task_slices_complete", "security_review_complete", "patch_plan_complete", "patch_task_plan_complete", "patch_task_complete", "patch_task_plan_complete", "all_patch_tasks_complete", "reduction_review_complete", "empirical_review_passed", "correctness_review_passed", "operations_review_passed", "admission_granted"]; }
 

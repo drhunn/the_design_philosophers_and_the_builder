@@ -40,6 +40,7 @@ inductive Event where
   deriving DecidableEq, Repr
 
 inductive Guard where
+  | prdMarkdownLinked
   | buildPackageComplete
   | featureWorktreeWorkflowComplete
   | taskSlicePlanComplete
@@ -71,7 +72,7 @@ def transition : State -> Event -> Option Transition
   | S1, problemIsClear => some { toState := S1A, guard := none }
   | S1, prototypeOnly => some { toState := S15, guard := none }
 
-  | S1A, idealModelComplete => some { toState := S2, guard := none }
+  | S1A, idealModelComplete => some { toState := S2, guard := some Guard.prdMarkdownLinked }
   | S1A, newContradictionFound => some { toState := S1, guard := none }
 
   | S2, architectureComplete => some { toState := S3, guard := none }
@@ -236,6 +237,21 @@ theorem happyPath_reaches_accepted :
 theorem accepted_is_terminal (ctx : Guard -> Bool) (e : Event) :
     dispatch ctx S13 e = none := by
   cases e <;> rfl
+
+theorem ideal_model_transition_is_guarded :
+    transition S1A idealModelComplete =
+      some { toState := S2, guard := some Guard.prdMarkdownLinked } := by
+  rfl
+
+theorem ideal_model_rejected_without_prd_markdown :
+    dispatch noGuardsTrue S1A idealModelComplete = none := by
+  rfl
+
+theorem ideal_model_complete_implies_prd_markdown (ctx : Guard -> Bool) :
+    dispatch ctx S1A idealModelComplete = some S2 ->
+    ctx Guard.prdMarkdownLinked = true := by
+  cases h : ctx Guard.prdMarkdownLinked <;>
+    simp [dispatch, transition, guardSatisfied, h]
 
 theorem task_complete_transition_is_guarded :
     transition S7 taskSliceComplete =

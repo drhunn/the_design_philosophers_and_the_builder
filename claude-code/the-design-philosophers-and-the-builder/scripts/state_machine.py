@@ -38,7 +38,7 @@ TABLE = {
         "prototype_only": (S15, ["allow_prototype", "mark_exploratory_only"], None),
     },
     S1A: {
-        "ideal_model_complete": (S2, ["run_aristotle"], None),
+        "ideal_model_complete": (S2, ["run_aristotle"], "prd_markdown_linked"),
         "new_contradiction_found": (S1, ["return_to_socrates"], None),
     },
     S2: {
@@ -165,6 +165,7 @@ TABLE = {
 }
 
 PROOF_GUARDS = {
+    "prd_markdown_linked",
     "feature_worktree_workflow_complete",
     "task_slice_plan_complete",
     "task_documentation_updated",
@@ -176,7 +177,8 @@ PROOF_GUARDS = {
     "no_remaining_patch_tasks",
 }
 
-REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work"]
+WORKTREE_PROOF_GUARDS = PROOF_GUARDS - {"prd_markdown_linked"}
+REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "changelog", "markdown_links"]
 
 
 def _present(value: Any) -> bool:
@@ -198,6 +200,25 @@ def parse_handoff_toml(text: str) -> dict[str, Any]:
     return tomllib.loads(text)
 
 
+def _validate_changelog(changelog: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    repo_changed = changelog.get("repo_changed")
+    if not isinstance(repo_changed, bool):
+        errors.append("[changelog].repo_changed must explicitly be true or false")
+        return errors
+    if repo_changed is True:
+        if changelog.get("required") is not True:
+            errors.append("[changelog].required must be true when repo_changed is true")
+        if changelog.get("updated") is not True:
+            errors.append("[changelog].updated must be true when repo_changed is true")
+        for key in ["date_time", "scope", "summary", "path"]:
+            if not _present(changelog.get(key)):
+                errors.append(f"[changelog].{key} is required when repo_changed is true")
+        if not _present(changelog.get("commit_or_merge_hash")) and changelog.get("pending_hash") is not True:
+            errors.append("[changelog].commit_or_merge_hash is required unless pending_hash is true")
+    return errors
+
+
 def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]:
     errors: list[str] = []
     for section_name in REQUIRED_SECTIONS:
@@ -210,8 +231,15 @@ def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]
     validation = _section(handoff, "validation")
     docs = _section(handoff, "documentation")
     remaining = _section(handoff, "remaining_work")
+    changelog = _section(handoff, "changelog")
+    links = _section(handoff, "markdown_links")
 
-    if guard in {"feature_worktree_workflow_complete", "task_slice_plan_complete", "task_documentation_updated", "all_task_slices_complete", "no_remaining_task_slices", "patch_task_plan_complete", "patch_task_documentation_updated", "all_patch_tasks_complete", "no_remaining_patch_tasks"}:
+    errors.extend(_validate_changelog(changelog))
+
+    if guard == "prd_markdown_linked" and not _present(links.get("prd")):
+        errors.append("[markdown_links].prd must link the PRD Markdown file before ideal_model_complete")
+
+    if guard in WORKTREE_PROOF_GUARDS:
         for key in ["active_branch", "worktree_path", "merge_target"]:
             if not _present(git.get(key)):
                 errors.append(f"[git].{key} is required")
@@ -330,6 +358,24 @@ def valid_handoff() -> dict[str, Any]:
             "remaining_patch_tasks": [],
             "no_remaining_task_slices": True,
             "no_remaining_patch_tasks": True,
+        },
+        "changelog": {
+            "repo_changed": False,
+            "required": False,
+            "updated": False,
+            "date_time": "",
+            "scope": "",
+            "summary": "",
+            "commit_or_merge_hash": "",
+            "pending_hash": False,
+            "path": "CHANGELOG.md",
+            "reason": "pure validation fixture",
+        },
+        "markdown_links": {
+            "prd": ["docs/product/prd.md"],
+            "reports": [],
+            "rationale": [],
+            "postmortems": [],
         },
     }
 

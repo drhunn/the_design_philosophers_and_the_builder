@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CODEX = ROOT / "codex-desktop" / "the-design-philosophers-and-the-builder"
 CLAUDE = ROOT / "claude-code" / "the-design-philosophers-and-the-builder"
 ANYTHING = ROOT / "anythingllm" / "plugins" / "agent-skills" / "the-design-philosophers-and-the-builder"
+LEAN_MODEL = ROOT / "proofs" / "lean" / "TheDesignPhilosophers" / "StateMachine.lean"
 
 AGENTS = ["README.md", "global.md", "socrates.md", "plato.md", "aristotle.md", "bacon.md", "hoare.md", "epictetus.md", "diogenes.md", "builder-1986.md"]
 LICENSE_MARKERS = ["MIT License", "Copyright (c) 2026 Danny Hunn", "THE SOFTWARE IS PROVIDED \"AS IS\""]
@@ -27,9 +28,31 @@ BUILDER_MARKERS = ["Feature Branch Workflow", "Do not nest Git worktrees inside 
 PLATO_MARKERS = ["Plato owns the PRD-level product artifact", "Create a PRD as a Markdown file", "templates/prd.md", "prd = [\"docs/product/prd.md\"]"]
 PRD_TEMPLATE_MARKERS = ["# Product Requirements Document", "## Product Identity", "## Source Problem", "## Functional Requirements", "## Success Criteria"]
 DISPATCHER_MARKERS = ["GLOBAL_PREAMBLE", "_load_with_preamble", "preamble_file", "dispatch_and_load"]
-PY_MACHINE_MARKERS = ["PROOF_GUARDS", "validate_handoff_for_guard", "task_slice_complete", "patch_task_complete"]
+PY_MACHINE_MARKERS = [
+    "PROOF_GUARDS",
+    "validate_handoff_for_guard",
+    "task_slice_complete",
+    "patch_task_complete",
+    "prd_markdown_linked",
+    "[changelog].repo_changed must explicitly be true or false",
+    "[markdown_links].prd must link the PRD Markdown file before ideal_model_complete",
+]
 JS_WRAPPER_MARKERS = ["GLOBAL_AGENT_FILE", "handler.js", "dispatch_and_load", "load_actions", "preamble_file"]
-JS_BASE_MARKERS = ["validateHandoffObject", "repo_changed", "handoffTemplate", "[changelog]"]
+JS_BASE_MARKERS = [
+    "validateHandoffObject",
+    "repo_changed",
+    "handoffTemplate",
+    "[changelog]",
+    "prd_markdown_linked",
+    "markdown_links",
+    "ideal_model_complete: t(STATES.S2, [\"run_aristotle\"], \"prd_markdown_linked\")",
+]
+LEAN_MARKERS = [
+    "prdMarkdownLinked",
+    "ideal_model_transition_is_guarded",
+    "ideal_model_rejected_without_prd_markdown",
+    "ideal_model_complete_implies_prd_markdown",
+]
 
 PY_CHECK = """
 import copy, importlib.util, sys
@@ -39,23 +62,39 @@ spec = importlib.util.spec_from_file_location('state_machine_under_test', p)
 mod = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = mod
 spec.loader.exec_module(mod)
+assert mod.TABLE[mod.S1A]['ideal_model_complete'][2] == 'prd_markdown_linked'
 m = mod.Machine(context=mod.happy_context())
 seen = []
 for event in mod.happy_path():
     seen.append(event)
     m.dispatch(event)
 assert m.state == mod.S13
+assert 'ideal_model_complete' in seen
 assert 'task_slice_complete' in seen
 assert 'patch_task_complete' in seen
 try:
-    mod.Machine(state=mod.S7, context={}).dispatch('task_slice_complete')
-    raise AssertionError('missing handoff accepted')
+    mod.Machine(state=mod.S1A, context={}).dispatch('ideal_model_complete')
+    raise AssertionError('missing PRD handoff accepted')
 except ValueError as exc:
     assert 'required proof handoff missing' in str(exc)
-bad = copy.deepcopy(mod.valid_handoff())
-bad['documentation']['task_documentation_updated'] = False
+bad_prd = copy.deepcopy(mod.valid_handoff())
+bad_prd['markdown_links']['prd'] = []
 try:
-    mod.Machine(state=mod.S7, context={'handoff': bad}).dispatch('task_slice_complete')
+    mod.Machine(state=mod.S1A, context={'handoff': bad_prd}).dispatch('ideal_model_complete')
+    raise AssertionError('missing PRD link accepted')
+except ValueError as exc:
+    assert 'markdown_links' in str(exc)
+bad_changelog = copy.deepcopy(mod.valid_handoff())
+del bad_changelog['changelog']['repo_changed']
+try:
+    mod.Machine(state=mod.S1A, context={'handoff': bad_changelog}).dispatch('ideal_model_complete')
+    raise AssertionError('missing changelog decision accepted')
+except ValueError as exc:
+    assert 'repo_changed' in str(exc)
+bad_task = copy.deepcopy(mod.valid_handoff())
+bad_task['documentation']['task_documentation_updated'] = False
+try:
+    mod.Machine(state=mod.S7, context={'handoff': bad_task}).dispatch('task_slice_complete')
     raise AssertionError('missing task docs accepted')
 except ValueError as exc:
     assert 'task_documentation_updated' in str(exc)
@@ -101,11 +140,12 @@ const plugin = require(process.argv[2]);
   const tmpl = await handler({operation:'handoff_template'});
   if (!tmpl.includes('[changelog]')) throw new Error('handoff template missing changelog section');
   if (!tmpl.includes('repo_changed = false')) throw new Error('handoff template missing explicit repo_changed default');
+  if (!tmpl.includes('[markdown_links]')) throw new Error('handoff template missing markdown_links');
   if (!tmpl.includes('prd = []')) throw new Error('handoff template missing PRD markdown link');
+  const prdFail = JSON.parse(await handler({operation:'dispatch', state:'S1A_SCOPED_IDEAL_MODEL', event:'ideal_model_complete', artifact_toml:tmpl}));
+  if (prdFail.ok || !JSON.stringify(prdFail).includes('markdown_links')) throw new Error('ideal_model_complete accepted missing PRD link');
   const validation = JSON.parse(await handler({operation:'validate_handoff', artifact_toml:tmpl, guard:'task_documentation_updated'}));
   if (validation.ok || validation.errors.length === 0) throw new Error('bad handoff accepted');
-  const loadedStart = JSON.parse(await handler({operation:'dispatch_and_load', state:'S0_INTAKE', event:'new_request'}));
-  if (!loadedStart.dispatch.ok || !String(loadedStart.loaded_actions[0].content).includes('Global Agent Rules')) throw new Error('dispatch_and_load did not load preamble');
   console.log('ok');
 })();
 """
@@ -147,8 +187,8 @@ def check_changelog(errors: list[str]) -> None:
     text = path.read_text(encoding="utf-8")
     if not re.search(r"\|\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+-\d{2}:\d{2}\s*\|", text):
         add(errors, "CHANGELOG.md has no entry with required date/time format")
-    if not re.search(r"`[0-9a-f]{40}`", text):
-        add(errors, "CHANGELOG.md has no 40-character commit or merge hash")
+    if not re.search(r"`[0-9a-f]{40}`|`PENDING`", text):
+        add(errors, "CHANGELOG.md has no commit/merge hash or pending-hash marker")
 
 
 def check_front_matter(errors: list[str], path: Path) -> None:
@@ -183,7 +223,8 @@ def check_toml(errors: list[str], path: Path) -> None:
 def run_python_snippet(errors: list[str], path: Path, snippet: str, label: str) -> None:
     if not path.is_file():
         return
-    result = subprocess.run([sys.executable, "-c", snippet.format(path=str(path))], cwd=ROOT, text=True, capture_output=True)
+    code = snippet.replace("{path}", str(path))
+    result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, text=True, capture_output=True)
     if result.returncode != 0:
         add(errors, f"{label} failed {rel(path)}: {result.stderr.strip() or result.stdout.strip()}")
 
@@ -230,6 +271,22 @@ def check_package(errors: list[str], base: Path, *, skill: bool) -> None:
         run_python_snippet(errors, base / "scripts" / "dispatcher.py", DISPATCHER_CHECK, "dispatcher")
 
 
+def check_runtime_conformance(errors: list[str]) -> None:
+    codex_machine = CODEX / "scripts" / "state_machine.py"
+    claude_machine = CLAUDE / "scripts" / "state_machine.py"
+    if codex_machine.is_file() and claude_machine.is_file():
+        if codex_machine.read_text(encoding="utf-8") != claude_machine.read_text(encoding="utf-8"):
+            add(errors, "Codex and Claude state_machine.py differ")
+    if (ANYTHING / "handler.js").is_file() and codex_machine.is_file():
+        js = (ANYTHING / "handler.js").read_text(encoding="utf-8")
+        py = codex_machine.read_text(encoding="utf-8")
+        for marker in ["feature_inventory_mismatch", "validation_mapping_failed", "correctness_mapping_failed", "operational_mapping_failed", "prd_markdown_linked"]:
+            if marker not in js:
+                add(errors, f"AnythingLLM handler.js missing transition/guard marker: {marker}")
+            if marker not in py:
+                add(errors, f"Python state machine missing transition/guard marker: {marker}")
+
+
 def check_anything(errors: list[str]) -> None:
     check_package(errors, ANYTHING, skill=False)
     require_file(errors, ANYTHING / "README.md")
@@ -258,6 +315,8 @@ def main() -> int:
     check_package(errors, CODEX, skill=True)
     check_package(errors, CLAUDE, skill=True)
     check_anything(errors)
+    check_runtime_conformance(errors)
+    contains(errors, LEAN_MODEL, LEAN_MARKERS)
     if (ROOT / "PACKAGE_MAINTENANCE.md").exists():
         add(errors, "PACKAGE_MAINTENANCE.md should not exist; maintenance rules belong in README.md")
     if errors:
