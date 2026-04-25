@@ -10,6 +10,17 @@ This repository packages the same workflow for three runtimes:
 
 Each runtime package is self-contained and can be copied independently.
 
+## Hard Rules
+
+- Do not create parent and child refs in the same Git namespace.
+- Do not nest Git worktrees inside other Git worktrees.
+- Do not code directly on `main`.
+- Do not batch task slices.
+- Do not batch patches.
+- Do not move to the next task or patch before documentation is updated.
+- Do not install only the main skill file. Copy the whole runtime package.
+- Each runtime package carries its own `LICENSE` file.
+
 ## Canonical Runtime Packages
 
 Use these folders as the canonical installable packages:
@@ -20,7 +31,7 @@ claude-code/the-design-philosophers-and-the-builder/
 anythingllm/plugins/agent-skills/the-design-philosophers-and-the-builder/
 ```
 
-Do not install only the main skill file. Copy the whole runtime folder so agents, templates, scripts, and local references remain available.
+Do not install only the main skill file. Copy the whole runtime folder so agents, templates, scripts, license, and local references remain available.
 
 ## Codex Desktop
 
@@ -225,6 +236,8 @@ After the system is built, Builder must complete this sequence before post-build
 
 One patch means one task slice, one branch/worktree context, one validation cycle, one test cycle, and one documentation update.
 
+A patch branch merges into its affected task branch, sub-feature branch, or feature branch. A patch branch must not merge directly to `main` unless the affected branch is `main` and the patch is explicitly approved as a mainline hotfix.
+
 Patch order is based on exploitability or user impact, blast radius, privilege impact, data exposure risk, dependency order, testability, and operational risk.
 
 ## State-Machine Builder Flow
@@ -258,6 +271,8 @@ Markdown is for linked long-form prose.
 
 The state machine consumes TOML, not Markdown.
 
+Every handoff template includes proof-carrying sections for `git`, `task`, `patch`, `validation`, `documentation`, and `remaining_work`. These fields are where the active branch, flat worktree path, task id, patch id, validation evidence, documentation update flags, and remaining work inventory are recorded.
+
 ## Package Verification
 
 Run the package verifier before treating a package change as done:
@@ -266,7 +281,9 @@ Run the package verifier before treating a package change as done:
 python tools\verify_packages.py
 ```
 
-The verifier checks required files, YAML front matter, TOML templates, Python state-machine happy paths with task and patch loops, AnythingLLM handler syntax when Node.js is available, and Builder workflow drift markers.
+The verifier checks required files, package-local MIT licenses, YAML front matter, TOML templates with proof-carrying sections, Python state-machine happy paths with task and patch loops, AnythingLLM handler syntax when Node.js is available, AnythingLLM plugin metadata, and Builder workflow drift markers.
+
+A GitHub Actions workflow also runs the verifier on push and pull request against `main`.
 
 ## Repository Layout
 
@@ -284,3 +301,5 @@ The three runtime packages are intentionally self-contained. When changing behav
 ## License
 
 This project is licensed under the MIT License. See `LICENSE`.
+
+Each self-contained runtime package also includes its own `LICENSE` file so the MIT copyright and permission notice travels with copied packages.
