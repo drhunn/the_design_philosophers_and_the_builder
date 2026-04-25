@@ -3,8 +3,8 @@
   "hubId": "the-design-philosophers-and-the-builder",
   "name": "The Design Philosophers and the Builder",
   "schema": "skill-1.0.0",
-  "version": "0.1.3",
-  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, TOML handoffs, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, proof-carrying handoff validation, fixed action-to-agent dispatch/loading, and one-patch-at-a-time patch discipline.",
+  "version": "0.1.4",
+  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, Plato PRD Markdown output, TOML handoffs, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, proof-carrying handoff validation, fixed action-to-agent dispatch/loading, and one-patch-at-a-time patch discipline.",
   "author": "@drhunn",
   "author_url": "https://github.com/drhunn/the_design_philosophers_and_the_builder",
   "entrypoint": {
@@ -19,7 +19,7 @@
         "type": "string"
       },
       "event": {
-        "description": "Event to dispatch, for example task_slice_complete or patch_task_complete. Required for dispatch and dispatch_and_load.",
+        "description": "Event to dispatch, for example task_slice_complete, ideal_model_complete, or patch_task_complete. Required for dispatch and dispatch_and_load.",
         "type": "string"
       },
       "action": {
@@ -35,11 +35,11 @@
         "type": "string"
       },
       "user_input": {
-        "description": "Optional user request to classify against the current bounded artifact. The handler returns routing guidance, not final judgment.",
+        "description": "Optional user request to classify against the current bounded artifact. The handler returns routing guidance, not final judgment. Product/PRD changes route to Plato.",
         "type": "string"
       },
       "artifact_toml": {
-        "description": "Optional current TOML handoff artifact containing git, task, patch, validation, documentation, and remaining_work sections. Used by validate_handoff and guarded dispatch.",
+        "description": "Optional current TOML handoff artifact containing git, task, patch, validation, documentation, remaining_work, and markdown_links sections. Plato PRDs should be linked from [markdown_links].prd.",
         "type": "string"
       },
       "guard": {
@@ -66,7 +66,7 @@
       "call": "{\"operation\":\"validate_handoff\",\"guard\":\"task_documentation_updated\",\"artifact_toml\":\"...\"}"
     },
     {
-      "prompt": "Give me the formal handoff template.",
+      "prompt": "Give me the formal handoff template with PRD markdown links.",
       "call": "{\"operation\":\"handoff_template\"}"
     }
   ],
