@@ -4,6 +4,8 @@ All meaningful repository changes must be recorded here, not just source-code ch
 
 Repository-level changes include documentation, workflow files, package metadata, proof models, verification scripts, templates, licensing, repository layout, generated artifacts, and maintenance policy changes.
 
+Changelog-only maintenance commits that replace `PENDING` with a known commit or merge hash do not require their own changelog entry.
+
 ## Entry Format
 
 Each entry must contain:
@@ -19,12 +21,13 @@ Use America/Chicago time unless a release process explicitly switches the reposi
 YYYY-MM-DD HH:MM:SS -05:00 | Scope | Summary | Commit/Merge Hash
 ```
 
-For pull-request workflows, use the merge commit hash when available. For direct commits, use the direct commit hash. A future entry may fill in the hash for a previous changelog-maintenance commit; a commit cannot know its own final hash before it is created.
+For pull-request workflows, use the merge commit hash when available. For direct commits, use the direct commit hash. A future entry may fill in the hash for a previous changelog-maintenance commit; a commit cannot know its own final hash before it is created. Changelog-only maintenance commits that replace a pending marker with the known hash are not recursively logged.
 
 ## 2026-04-25
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
+| 2026-04-25 11:10:00 -05:00 | Repository docs | Documented the changelog-only maintenance exception to prevent recursive changelog loops. | `PENDING` |
 | 2026-04-25 10:55:00 -05:00 | Verification | Added package README continuity checks so dispatcher, fixed-action loading, handoff template, and PRD template documentation cannot silently drift again. | `42dcc82580ba0c14a0a72caf29bab86f37ebcdef` |
 | 2026-04-25 10:45:00 -05:00 | Package docs | Updated Codex and Claude package READMEs to document full package contents, dispatcher loader behavior, and PRD/changelog handoff artifacts. | `d4f394a7e9df201d3b127c01811e061f7a33ff60` |
 | 2026-04-25 10:30:00 -05:00 | Changelog | Backfilled missing changelog entries and recorded the changelog/runtime conformance cleanup. | `14b924c33c5b9a4c3b802fc0550b0741ddc2df17` |
