@@ -1,0 +1,19 @@
+name: Verify Lean proofs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify Lean proofs
+        uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: proofs/lean
