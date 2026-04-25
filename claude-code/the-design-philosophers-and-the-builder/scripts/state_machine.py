@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import tomllib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 
 S0 = "S0_INTAKE"
 S1 = "S1_PROBLEM_EXAMINATION"
@@ -162,6 +164,175 @@ TABLE = {
     S15: {"new_contradiction_found": (S1, ["return_to_socrates"], None)},
 }
 
+PROOF_GUARDS = {
+    "feature_worktree_workflow_complete",
+    "task_slice_plan_complete",
+    "task_documentation_updated",
+    "all_task_slices_complete",
+    "no_remaining_task_slices",
+    "patch_task_plan_complete",
+    "patch_task_documentation_updated",
+    "all_patch_tasks_complete",
+    "no_remaining_patch_tasks",
+}
+
+REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work"]
+
+
+def _present(value: Any) -> bool:
+    return value is not None and value != "" and value != []
+
+
+def _section(handoff: dict[str, Any], name: str) -> dict[str, Any]:
+    value = handoff.get(name)
+    return value if isinstance(value, dict) else {}
+
+
+def _subset(touched: list[str], allowed: list[str]) -> bool:
+    if not touched:
+        return True
+    return bool(allowed) and set(touched).issubset(set(allowed))
+
+
+def parse_handoff_toml(text: str) -> dict[str, Any]:
+    return tomllib.loads(text)
+
+
+def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]:
+    errors: list[str] = []
+    for section_name in REQUIRED_SECTIONS:
+        if not isinstance(handoff.get(section_name), dict):
+            errors.append(f"missing [{section_name}] section")
+
+    git = _section(handoff, "git")
+    task = _section(handoff, "task")
+    patch = _section(handoff, "patch")
+    validation = _section(handoff, "validation")
+    docs = _section(handoff, "documentation")
+    remaining = _section(handoff, "remaining_work")
+
+    if guard in {"feature_worktree_workflow_complete", "task_slice_plan_complete", "task_documentation_updated", "all_task_slices_complete", "no_remaining_task_slices", "patch_task_plan_complete", "patch_task_documentation_updated", "all_patch_tasks_complete", "no_remaining_patch_tasks"}:
+        for key in ["active_branch", "worktree_path", "merge_target"]:
+            if not _present(git.get(key)):
+                errors.append(f"[git].{key} is required")
+        if git.get("branch_is_collision_free") is not True:
+            errors.append("[git].branch_is_collision_free must be true")
+        if git.get("worktree_is_flat_sibling") is not True:
+            errors.append("[git].worktree_is_flat_sibling must be true")
+        if git.get("worktree_verified") is not True:
+            errors.append("[git].worktree_verified must be true")
+
+    if guard in {"task_slice_plan_complete", "task_documentation_updated", "all_task_slices_complete", "no_remaining_task_slices"}:
+        for key in ["task_id", "feature_slug", "task_slug", "purpose"]:
+            if not _present(task.get(key)):
+                errors.append(f"[task].{key} is required")
+        if not _subset(task.get("touched_files", []), task.get("allowed_files", [])):
+            errors.append("[task].touched_files must be a subset of [task].allowed_files")
+
+    if guard in {"task_documentation_updated", "all_task_slices_complete", "no_remaining_task_slices", "patch_task_documentation_updated", "all_patch_tasks_complete", "no_remaining_patch_tasks"}:
+        for key in ["bacon_passed", "hoare_passed", "epictetus_passed", "diogenes_passed", "tests_passed"]:
+            if validation.get(key) is not True:
+                errors.append(f"[validation].{key} must be true")
+
+    if guard in {"task_documentation_updated", "all_task_slices_complete", "no_remaining_task_slices"}:
+        if docs.get("task_documentation_updated") is not True:
+            errors.append("[documentation].task_documentation_updated must be true")
+        if not _present(docs.get("task_documentation_path")):
+            errors.append("[documentation].task_documentation_path is required")
+
+    if guard in {"all_task_slices_complete", "no_remaining_task_slices"}:
+        if remaining.get("no_remaining_task_slices") is not True:
+            errors.append("[remaining_work].no_remaining_task_slices must be true")
+        if remaining.get("remaining_task_slices", []) != []:
+            errors.append("[remaining_work].remaining_task_slices must be empty")
+
+    if guard in {"patch_task_plan_complete", "patch_task_documentation_updated", "all_patch_tasks_complete", "no_remaining_patch_tasks"}:
+        for key in ["patch_task_id", "patch_id", "kind", "risk_or_defect", "affected_branch", "affected_worktree_path", "merge_target"]:
+            if not _present(patch.get(key)):
+                errors.append(f"[patch].{key} is required")
+        if not _present(patch.get("merge_path")):
+            errors.append("[patch].merge_path is required")
+        if not _subset(patch.get("touched_files", []), patch.get("allowed_files", [])):
+            errors.append("[patch].touched_files must be a subset of [patch].allowed_files")
+
+    if guard in {"patch_task_documentation_updated", "all_patch_tasks_complete", "no_remaining_patch_tasks"}:
+        if docs.get("patch_documentation_updated") is not True:
+            errors.append("[documentation].patch_documentation_updated must be true")
+        if not _present(docs.get("patch_documentation_path")):
+            errors.append("[documentation].patch_documentation_path is required")
+
+    if guard in {"all_patch_tasks_complete", "no_remaining_patch_tasks"}:
+        if remaining.get("no_remaining_patch_tasks") is not True:
+            errors.append("[remaining_work].no_remaining_patch_tasks must be true")
+        if remaining.get("remaining_patch_tasks", []) != []:
+            errors.append("[remaining_work].remaining_patch_tasks must be empty")
+
+    return errors
+
+
+def valid_handoff() -> dict[str, Any]:
+    return {
+        "git": {
+            "active_branch": "task/state-machine--transition-table--guard-checks--reject-invalid-transition",
+            "branch_is_collision_free": True,
+            "worktree_path": "../worktrees/repo/task--state-machine--transition-table--guard-checks--reject-invalid-transition",
+            "worktree_is_flat_sibling": True,
+            "worktree_verified": True,
+            "merge_target": "subfeature/state-machine--transition-table--guard-checks",
+            "merge_path": ["task/state-machine--transition-table--guard-checks--reject-invalid-transition", "subfeature/state-machine--transition-table--guard-checks", "feature/state-machine", "main"],
+        },
+        "task": {
+            "task_id": "T001",
+            "feature_slug": "state-machine",
+            "subfeature_path_slug": "transition-table--guard-checks",
+            "task_slug": "reject-invalid-transition",
+            "purpose": "Reject invalid transitions and require proof fields.",
+            "status": "complete",
+            "touched_files": ["scripts/state_machine.py"],
+            "allowed_files": ["scripts/state_machine.py"],
+            "expected_behavior": "Invalid transitions and missing proof are rejected.",
+        },
+        "patch": {
+            "patch_task_id": "P001",
+            "patch_id": "P001",
+            "kind": "security",
+            "risk_or_defect": "Missing proof validation.",
+            "affected_branch": "task/state-machine--transition-table--guard-checks--reject-invalid-transition",
+            "affected_worktree_path": "../worktrees/repo/patch--state-machine--transition-table--guard-checks--P001",
+            "merge_target": "task/state-machine--transition-table--guard-checks--reject-invalid-transition",
+            "merge_path": ["patch/state-machine--transition-table--guard-checks--P001", "task/state-machine--transition-table--guard-checks--reject-invalid-transition"],
+            "allowed_files": ["scripts/state_machine.py"],
+            "touched_files": ["scripts/state_machine.py"],
+            "status": "complete",
+        },
+        "validation": {
+            "bacon_checks": ["happy path", "negative guard checks"],
+            "bacon_passed": True,
+            "hoare_obligations": ["invalid transitions rejected"],
+            "hoare_passed": True,
+            "epictetus_obligations": ["bad artifacts fail closed"],
+            "epictetus_passed": True,
+            "diogenes_cut_check": "No extra workflow bypass added.",
+            "diogenes_passed": True,
+            "targeted_tests": ["task_slice_complete without docs fails"],
+            "regression_tests": ["happy path"],
+            "tests_passed": True,
+        },
+        "documentation": {
+            "task_documentation_path": "docs/tasks/T001.md",
+            "task_documentation_updated": True,
+            "patch_documentation_path": "docs/patches/P001.md",
+            "patch_documentation_updated": True,
+            "postmortem_paths": [],
+        },
+        "remaining_work": {
+            "remaining_task_slices": [],
+            "remaining_patch_tasks": [],
+            "no_remaining_task_slices": True,
+            "no_remaining_patch_tasks": True,
+        },
+    }
+
 
 @dataclass
 class Result:
@@ -181,11 +352,29 @@ class Machine:
     def available_events(self):
         return sorted(TABLE.get(self.state, {}).keys())
 
+    def _handoff(self) -> dict[str, Any] | None:
+        if isinstance(self.context.get("handoff"), dict):
+            return self.context["handoff"]
+        if isinstance(self.context.get("handoff_toml"), str):
+            return parse_handoff_toml(self.context["handoff_toml"])
+        return None
+
+    def _guard_satisfied(self, guard: str) -> bool:
+        if guard in PROOF_GUARDS:
+            handoff = self._handoff()
+            if handoff is None:
+                raise ValueError(f"required proof handoff missing for guard: {guard}")
+            errors = validate_handoff_for_guard(handoff, guard)
+            if errors:
+                raise ValueError(f"handoff validation failed for guard {guard}: " + "; ".join(errors))
+            return True
+        return self.context.get(guard) is True
+
     def dispatch(self, event: str):
         if event not in TABLE.get(self.state, {}):
             raise ValueError(f"invalid event {event!r} in state {self.state!r}; allowed: {self.available_events()}")
         next_state, actions, guard = TABLE[self.state][event]
-        if guard and self.context.get(guard) is not True:
+        if guard and not self._guard_satisfied(guard):
             raise ValueError(f"required context flag not satisfied: {guard}")
         result = Result(self.state, event, next_state, actions, datetime.now(timezone.utc).isoformat())
         self.state = next_state
@@ -226,13 +415,7 @@ def happy_path():
 def happy_context():
     return {
         "build_package_complete": True,
-        "feature_worktree_workflow_complete": True,
-        "task_slice_plan_complete": True,
-        "task_documentation_updated": True,
-        "all_task_slices_complete": True,
-        "patch_task_plan_complete": True,
-        "patch_task_documentation_updated": True,
-        "all_patch_tasks_complete": True,
+        "handoff": valid_handoff(),
         "empirical_review_passed": True,
         "correctness_review_passed": True,
         "operations_review_passed": True,
