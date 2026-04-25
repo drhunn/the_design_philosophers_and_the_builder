@@ -10,6 +10,19 @@ This repository packages the same workflow for three runtimes:
 
 Each runtime package is self-contained and can be copied independently.
 
+## The Pattern
+
+```text
+Socrates  -> clarify the real problem
+Plato     -> define the ideal product
+Aristotle -> design the structure
+Bacon     -> demand evidence
+Hoare     -> demand correctness
+Epictetus -> demand resilience
+Diogenes  -> remove excess
+Builder   -> implement carefully
+```
+
 ## Hard Rules
 
 - Do not create parent and child refs in the same Git namespace.

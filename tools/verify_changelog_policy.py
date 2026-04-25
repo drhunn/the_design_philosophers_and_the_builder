@@ -46,12 +46,21 @@ def changed_files_against_base() -> list[str]:
     return [line for line in output.splitlines() if line]
 
 
+def entry_text(text: str) -> str:
+    lines = []
+    for line in text.splitlines():
+        if line.startswith("|") and not line.startswith("|---"):
+            lines.append(line)
+    return "\n".join(lines)
+
+
 def main() -> int:
     if not CHANGELOG.is_file():
         print("CHANGELOG.md is missing")
         return 1
 
     text = CHANGELOG.read_text(encoding="utf-8")
+    entries = entry_text(text)
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
     changed = changed_files_against_base()
 
@@ -62,9 +71,6 @@ def main() -> int:
             return 0
 
         if changed_set and changed_set.issubset(POLICY_BOOTSTRAP_FILES):
-            # Bootstrap escape hatch for repairing this verifier and the written
-            # changelog rule itself. Without this, fixing the anti-recursion rule
-            # can deadlock behind the broken rule it is replacing.
             return 0
 
         if "CHANGELOG.md" not in changed:
@@ -74,12 +80,12 @@ def main() -> int:
                 print(f"- {path}")
             return 1
 
-        if PENDING_RE.search(text):
-            print("CHANGELOG.md contains `PENDING`. Use a known 40-character commit hash before merge.")
+        if PENDING_RE.search(entries):
+            print("CHANGELOG.md contains a `PENDING` changelog entry. Use a known 40-character commit hash before merge.")
             return 1
 
-        if not COMMIT_HASH_RE.search(text):
-            print("CHANGELOG.md must contain at least one known 40-character commit hash.")
+        if not COMMIT_HASH_RE.search(entries):
+            print("CHANGELOG.md must contain at least one known 40-character commit hash in its entries.")
             return 1
 
     return 0
