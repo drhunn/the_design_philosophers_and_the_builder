@@ -3,15 +3,15 @@
   "hubId": "the-design-philosophers-and-the-builder",
   "name": "The Design Philosophers and the Builder",
   "schema": "skill-1.0.0",
-  "version": "0.1.1",
-  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, TOML handoffs, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, and one-patch-at-a-time patch discipline.",
+  "version": "0.1.2",
+  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, TOML handoffs, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, proof-carrying handoff validation, and one-patch-at-a-time patch discipline.",
   "author": "@drhunn",
   "author_url": "https://github.com/drhunn/the_design_philosophers_and_the_builder",
   "entrypoint": {
     "file": "handler.js",
     "params": {
       "operation": {
-        "description": "Operation to run: describe, available_events, dispatch, happy_path, handoff_template, routing_guidance, or builder_constraint.",
+        "description": "Operation to run: describe, available_events, dispatch, happy_path, handoff_template, validate_handoff, routing_guidance, or builder_constraint.",
         "type": "string"
       },
       "state": {
@@ -23,7 +23,7 @@
         "type": "string"
       },
       "context_json": {
-        "description": "Optional JSON object of guard flags, for example {\"task_documentation_updated\":true,\"patch_task_documentation_updated\":true}.",
+        "description": "Optional JSON object. For guarded Builder transitions, include artifact_toml or handoff proof data rather than bare booleans.",
         "type": "string"
       },
       "user_input": {
@@ -31,7 +31,11 @@
         "type": "string"
       },
       "artifact_toml": {
-        "description": "Optional current TOML handoff artifact containing git, task, patch, validation, documentation, and remaining_work sections.",
+        "description": "Optional current TOML handoff artifact containing git, task, patch, validation, documentation, and remaining_work sections. Used by validate_handoff and guarded dispatch.",
+        "type": "string"
+      },
+      "guard": {
+        "description": "Optional guard name for validate_handoff, for example task_documentation_updated or patch_task_documentation_updated.",
         "type": "string"
       }
     }
@@ -44,6 +48,10 @@
     {
       "prompt": "What events are legal from task-slice planning?",
       "call": "{\"operation\":\"available_events\",\"state\":\"S6C_BUILDER_TASK_SLICE_PLANNING\"}"
+    },
+    {
+      "prompt": "Validate this TOML handoff before completing a task slice.",
+      "call": "{\"operation\":\"validate_handoff\",\"guard\":\"task_documentation_updated\",\"artifact_toml\":\"...\"}"
     },
     {
       "prompt": "Show the Builder constraints for flat worktrees and one-patch-at-a-time patching.",
