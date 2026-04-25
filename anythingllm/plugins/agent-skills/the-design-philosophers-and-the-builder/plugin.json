@@ -3,23 +3,31 @@
   "hubId": "the-design-philosophers-and-the-builder",
   "name": "The Design Philosophers and the Builder",
   "schema": "skill-1.0.0",
-  "version": "0.1.2",
-  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, TOML handoffs, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, proof-carrying handoff validation, and one-patch-at-a-time patch discipline.",
+  "version": "0.1.3",
+  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, TOML handoffs, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, proof-carrying handoff validation, fixed action-to-agent dispatch/loading, and one-patch-at-a-time patch discipline.",
   "author": "@drhunn",
   "author_url": "https://github.com/drhunn/the_design_philosophers_and_the_builder",
   "entrypoint": {
     "file": "handler.js",
     "params": {
       "operation": {
-        "description": "Operation to run: describe, available_events, dispatch, happy_path, handoff_template, validate_handoff, routing_guidance, or builder_constraint.",
+        "description": "Operation to run: describe, available_events, dispatch, dispatch_and_load, resolve_actions, load_actions, happy_path, handoff_template, validate_handoff, routing_guidance, or builder_constraint.",
         "type": "string"
       },
       "state": {
-        "description": "Current state, for example S6C_BUILDER_TASK_SLICE_PLANNING. Required for available_events and dispatch.",
+        "description": "Current state, for example S6C_BUILDER_TASK_SLICE_PLANNING. Required for available_events, dispatch, and dispatch_and_load.",
         "type": "string"
       },
       "event": {
-        "description": "Event to dispatch, for example task_slice_complete or patch_task_complete. Required for dispatch.",
+        "description": "Event to dispatch, for example task_slice_complete or patch_task_complete. Required for dispatch and dispatch_and_load.",
+        "type": "string"
+      },
+      "action": {
+        "description": "Optional single action name for resolve_actions or load_actions, for example run_socrates.",
+        "type": "string"
+      },
+      "actions_json": {
+        "description": "Optional JSON array of action names for resolve_actions or load_actions, for example [\"run_socrates\",\"check_build_package\"].",
         "type": "string"
       },
       "context_json": {
@@ -42,20 +50,20 @@
   },
   "examples": [
     {
-      "prompt": "Start the design philosophers workflow for a new software idea.",
-      "call": "{\"operation\":\"dispatch\",\"state\":\"S0_INTAKE\",\"event\":\"new_request\"}"
+      "prompt": "Start the design philosophers workflow for a new software idea and load the next agent prompt.",
+      "call": "{\"operation\":\"dispatch_and_load\",\"state\":\"S0_INTAKE\",\"event\":\"new_request\"}"
     },
     {
-      "prompt": "What events are legal from task-slice planning?",
-      "call": "{\"operation\":\"available_events\",\"state\":\"S6C_BUILDER_TASK_SLICE_PLANNING\"}"
+      "prompt": "Resolve the Socrates action to its bundled agent file.",
+      "call": "{\"operation\":\"resolve_actions\",\"action\":\"run_socrates\"}"
+    },
+    {
+      "prompt": "Load the Builder agent prompt for task-slice planning.",
+      "call": "{\"operation\":\"load_actions\",\"action\":\"run_builder_task_slice_planning\"}"
     },
     {
       "prompt": "Validate this TOML handoff before completing a task slice.",
       "call": "{\"operation\":\"validate_handoff\",\"guard\":\"task_documentation_updated\",\"artifact_toml\":\"...\"}"
-    },
-    {
-      "prompt": "Show the Builder constraints for flat worktrees and one-patch-at-a-time patching.",
-      "call": "{\"operation\":\"builder_constraint\"}"
     },
     {
       "prompt": "Give me the formal handoff template.",
