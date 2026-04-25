@@ -191,6 +191,12 @@ Each changelog entry must include:
 
 A commit cannot know its own final hash before it is created. If needed, a later changelog-maintenance commit may replace a `PENDING` marker with the known commit or merge hash. That changelog-only maintenance commit is not itself a meaningful repository change for changelog-entry purposes and does not require a new changelog entry.
 
+The CI changelog policy verifier enforces this distinction:
+
+- pull requests with meaningful repository changes must include `CHANGELOG.md`
+- normal pull requests may use `PENDING` when the final merge hash is unknowable
+- changelog-only maintenance pull requests may only replace `PENDING` with a 40-character hash
+
 ## Builder Feature Branch Workflow
 
 Builder must not start implementation until the Feature Branch Workflow exists.
@@ -437,7 +443,15 @@ python tools\verify_packages.py
 
 The verifier checks required files, package-local MIT licenses, `CHANGELOG.md` format and commit hash entries, global agent preamble files, YAML front matter, TOML templates with proof-carrying sections, `[changelog].repo_changed`, `[markdown_links].prd`, Plato PRD ownership, PRD templates, Python state-machine happy paths with task and patch loops, Python dispatcher global preamble loading, AnythingLLM wrapper handler global preamble loading when Node.js is available, AnythingLLM embedded handoff PRD/changelog links, AnythingLLM plugin metadata, and Builder workflow drift markers.
 
-A GitHub Actions workflow also runs the verifier on push and pull request against `main`.
+Run the changelog policy verifier before treating changelog-rule changes as done:
+
+```powershell
+python tools\verify_changelog_policy.py
+```
+
+The changelog policy verifier uses Git history in CI to distinguish meaningful repository changes from changelog-only hash finalization. The GitHub Actions package workflow fetches full history so this diff check can compare pull requests against `main`.
+
+A GitHub Actions workflow runs both verifiers on push and pull request against `main`.
 
 ## Repository Layout
 
