@@ -3,12 +3,12 @@
   "hubId": "the-design-philosophers-and-the-builder",
   "name": "The Design Philosophers and the Builder",
   "schema": "skill-1.0.0",
-  "version": "0.1.4",
-  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, Plato PRD Markdown output, TOML handoffs, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, proof-carrying handoff validation, fixed action-to-agent dispatch/loading, and one-patch-at-a-time patch discipline.",
+  "version": "0.1.5",
+  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, Plato PRD Markdown output, TOML handoffs with explicit changelog decisions, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, proof-carrying handoff validation, fixed action-to-agent dispatch/loading with global agent preamble, and one-patch-at-a-time patch discipline.",
   "author": "@drhunn",
   "author_url": "https://github.com/drhunn/the_design_philosophers_and_the_builder",
   "entrypoint": {
-    "file": "handler.js",
+    "file": "handler-with-global.js",
     "params": {
       "operation": {
         "description": "Operation to run: describe, available_events, dispatch, dispatch_and_load, resolve_actions, load_actions, happy_path, handoff_template, validate_handoff, routing_guidance, or builder_constraint.",
@@ -39,7 +39,7 @@
         "type": "string"
       },
       "artifact_toml": {
-        "description": "Optional current TOML handoff artifact containing git, task, patch, validation, documentation, remaining_work, and markdown_links sections. Plato PRDs should be linked from [markdown_links].prd.",
+        "description": "Optional current TOML handoff artifact containing git, task, patch, validation, documentation, remaining_work, changelog, and markdown_links sections. Every handoff must explicitly set [changelog].repo_changed.",
         "type": "string"
       },
       "guard": {
@@ -50,7 +50,7 @@
   },
   "examples": [
     {
-      "prompt": "Start the design philosophers workflow for a new software idea and load the next agent prompt.",
+      "prompt": "Start the design philosophers workflow for a new software idea and load the next agent prompt with global rules.",
       "call": "{\"operation\":\"dispatch_and_load\",\"state\":\"S0_INTAKE\",\"event\":\"new_request\"}"
     },
     {
@@ -66,7 +66,7 @@
       "call": "{\"operation\":\"validate_handoff\",\"guard\":\"task_documentation_updated\",\"artifact_toml\":\"...\"}"
     },
     {
-      "prompt": "Give me the formal handoff template with PRD markdown links.",
+      "prompt": "Give me the formal handoff template with changelog and PRD markdown links.",
       "call": "{\"operation\":\"handoff_template\"}"
     }
   ],
