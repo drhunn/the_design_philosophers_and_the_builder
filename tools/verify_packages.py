@@ -27,6 +27,9 @@ HANDOFF_SECTIONS = ["git", "task", "patch", "validation", "documentation", "rema
 BUILDER_MARKERS = ["Feature Branch Workflow", "Do not nest Git worktrees inside other Git worktrees", "Builder must not batch patches", "Required Task Slice Documentation", "Required Patch Documentation"]
 PLATO_MARKERS = ["Plato owns the PRD-level product artifact", "Create a PRD as a Markdown file", "templates/prd.md", "prd = [\"docs/product/prd.md\"]"]
 PRD_TEMPLATE_MARKERS = ["# Product Requirements Document", "## Product Identity", "## Source Problem", "## Functional Requirements", "## Success Criteria"]
+PACKAGE_README_MARKERS = ["Dispatcher Loader", "agents/global.md", "fixed action", "templates/handoff.toml", "templates/prd.md"]
+PY_PACKAGE_README_MARKERS = ["scripts/dispatcher.py"]
+ANYTHING_PACKAGE_README_MARKERS = ["handler-with-global.js", "resolve_actions", "load_actions", "dispatch_and_load"]
 DISPATCHER_MARKERS = ["GLOBAL_PREAMBLE", "_load_with_preamble", "preamble_file", "dispatch_and_load"]
 PY_MACHINE_MARKERS = [
     "PROOF_GUARDS",
@@ -255,6 +258,11 @@ def check_package(errors: list[str], base: Path, *, skill: bool) -> None:
     require_dir(errors, base)
     require_dir(errors, base / "agents")
     require_dir(errors, base / "templates")
+    contains(errors, base / "README.md", PACKAGE_README_MARKERS)
+    if skill:
+        contains(errors, base / "README.md", PY_PACKAGE_README_MARKERS)
+    else:
+        contains(errors, base / "README.md", ANYTHING_PACKAGE_README_MARKERS)
     contains(errors, base / "LICENSE", LICENSE_MARKERS)
     for agent in AGENTS:
         require_file(errors, base / "agents" / agent)
