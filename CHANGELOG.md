@@ -27,7 +27,8 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
-| 2026-04-25 11:25:00 -05:00 | Verification | Added a CI changelog policy verifier to distinguish meaningful repository changes from changelog-only hash finalization and prevent recursive changelog loops. | `PENDING` |
+| 2026-04-25 12:10:00 -05:00 | Repository docs | Added a concise README pattern summary near the top of the file. | `c67dd150206543d88c6937f753c2d215db54f0f0` |
+| 2026-04-25 11:25:00 -05:00 | Verification | Added a CI changelog policy verifier to distinguish meaningful repository changes from changelog-only hash finalization and prevent recursive changelog loops. | `46bae4bd821aaa3a6695e081b983b6cb2e37a87c` |
 | 2026-04-25 11:10:00 -05:00 | Repository docs | Documented the changelog-only maintenance exception to prevent recursive changelog loops. | `6241976d259976473c6c7b89a1be631ff0b824f7` |
 | 2026-04-25 10:55:00 -05:00 | Verification | Added package README continuity checks so dispatcher, fixed-action loading, handoff template, and PRD template documentation cannot silently drift again. | `42dcc82580ba0c14a0a72caf29bab86f37ebcdef` |
 | 2026-04-25 10:45:00 -05:00 | Package docs | Updated Codex and Claude package READMEs to document full package contents, dispatcher loader behavior, and PRD/changelog handoff artifacts. | `d4f394a7e9df201d3b127c01811e061f7a33ff60` |
