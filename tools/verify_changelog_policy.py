@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 import subprocess
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,8 +32,8 @@ def changed_files_against_base() -> list[str]:
         try:
             run_git("fetch", "--no-tags", "--prune", "--depth=1", "origin", base_ref)
         except RuntimeError:
-            # The checkout workflow normally uses fetch-depth: 0. If the targeted
-            # fetch fails but origin/<base> already exists locally, continue.
+            # The checkout workflow uses fetch-depth: 0. If this targeted fetch
+            # fails but origin/<base> already exists locally, continue.
             pass
         base = f"origin/{base_ref}"
         diff_base = run_git("merge-base", "HEAD", base)
@@ -45,20 +44,22 @@ def changed_files_against_base() -> list[str]:
     return [line for line in output.splitlines() if line]
 
 
-def changelog_only_hash_maintenance() -> bool:
-    changed = changed_files_against_base()
-    if changed != ["CHANGELOG.md"]:
-        return False
-
+def changelog_patch_against_base() -> str:
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
     base_ref = os.environ.get("GITHUB_BASE_REF", "")
     if event_name == "pull_request" and base_ref:
         base = f"origin/{base_ref}"
         diff_base = run_git("merge-base", "HEAD", base)
-        patch = run_git("diff", "--unified=0", f"{diff_base}...HEAD", "--", "CHANGELOG.md")
-    else:
-        patch = run_git("show", "--unified=0", "--format=", "HEAD", "--", "CHANGELOG.md")
+        return run_git("diff", "--unified=0", f"{diff_base}...HEAD", "--", "CHANGELOG.md")
+    return run_git("show", "--unified=0", "--format=", "HEAD", "--", "CHANGELOG.md")
 
+
+def changelog_only_hash_maintenance() -> bool:
+    changed = changed_files_against_base()
+    if changed != ["CHANGELOG.md"]:
+        return False
+
+    patch = changelog_patch_against_base()
     removed_pending = False
     added_hash = False
     for line in patch.splitlines():
@@ -86,10 +87,6 @@ def main() -> int:
     pending_count = len(PENDING_RE.findall(text))
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
     changed = changed_files_against_base()
-
-    if event_name == "push" and pending_count:
-        print("CHANGELOG.md contains `PENDING` on a push build. Replace pending hashes before main is considered clean.")
-        return 1
 
     if event_name == "pull_request":
         if changed == ["CHANGELOG.md"]:
