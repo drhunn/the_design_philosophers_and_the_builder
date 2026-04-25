@@ -4,7 +4,7 @@
 
 This AnythingLLM custom agent skill exposes the Design Philosophers workflow as a callable tool.
 
-Use it when designing software from scratch, controlling scope drift, routing user changes, producing TOML handoffs, or enforcing smallest-safe-slice implementation.
+Use it when designing software from scratch, controlling scope drift, routing user changes, producing TOML handoffs, validating proof-carrying transitions, resolving state-machine actions to bundled agent files, loading the correct agent prompt, or enforcing smallest-safe-slice implementation.
 
 ## Self-Contained Package
 
@@ -26,7 +26,7 @@ Required local files:
 - `agents/builder-1986.md`
 - `templates/handoff.toml`
 
-The state machine is embedded directly in `handler.js`.
+The state machine and fixed action dispatcher are embedded directly in `handler.js`.
 
 ## Install
 
@@ -43,20 +43,61 @@ The handler supports these operations:
 - `describe`
 - `available_events`
 - `dispatch`
+- `dispatch_and_load`
+- `resolve_actions`
+- `load_actions`
 - `happy_path`
 - `handoff_template`
+- `validate_handoff`
 - `routing_guidance`
 - `builder_constraint`
 
+## Action Dispatcher Loader
+
+The state machine emits action names such as `run_socrates`, `run_hoare_prebuild`, and `run_builder_task_slice_planning`.
+
+The dispatcher maps those fixed action names to bundled agent Markdown files:
+
+- `run_socrates` -> `agents/socrates.md`
+- `run_plato` -> `agents/plato.md`
+- `run_aristotle` -> `agents/aristotle.md`
+- `run_bacon_prebuild` -> `agents/bacon.md`
+- `run_hoare_prebuild` -> `agents/hoare.md`
+- `run_epictetus_prebuild` -> `agents/epictetus.md`
+- `run_diogenes_prebuild` -> `agents/diogenes.md`
+- `run_builder_task_slice_planning` -> `agents/builder-1986.md`
+
+Controller actions such as `check_build_package`, `make_admission_decision`, `accept_feature`, and `require_postmortem` do not load agent files.
+
+The loader uses a fixed action-to-file map. It does not accept arbitrary file paths from user input.
+
 ## Examples
 
-Start workflow:
+Start workflow and load the next agent prompt:
 
 ```json
 {
-  "operation": "dispatch",
+  "operation": "dispatch_and_load",
   "state": "S0_INTAKE",
   "event": "new_request"
+}
+```
+
+Resolve an action without loading content:
+
+```json
+{
+  "operation": "resolve_actions",
+  "action": "run_socrates"
+}
+```
+
+Load an agent prompt directly from an action:
+
+```json
+{
+  "operation": "load_actions",
+  "action": "run_builder_task_slice_planning"
 }
 ```
 
@@ -77,6 +118,16 @@ Dispatch guarded transition:
   "state": "S6_BUILD_READY",
   "event": "build_package_complete",
   "context_json": "{\"build_package_complete\":true}"
+}
+```
+
+Validate a proof-carrying TOML handoff:
+
+```json
+{
+  "operation": "validate_handoff",
+  "guard": "task_documentation_updated",
+  "artifact_toml": "..."
 }
 ```
 
@@ -102,4 +153,4 @@ Builder is not allowed to build the whole design as a lump.
 
 Builder must slice it, cost it, order it, and implement incrementally.
 
-A slice is done only when it satisfies mapped validation, correctness, and operational obligations.
+A slice is done only when it satisfies mapped validation, correctness, operational obligations, and documentation requirements.
