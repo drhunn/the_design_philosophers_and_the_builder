@@ -21,20 +21,10 @@ ANYTHING = ROOT / "anythingllm" / "plugins" / "agent-skills" / "the-design-philo
 AGENTS = ["README.md", "socrates.md", "plato.md", "aristotle.md", "bacon.md", "hoare.md", "epictetus.md", "diogenes.md", "builder-1986.md"]
 LICENSE_MARKERS = ["MIT License", "Copyright (c) 2026 Danny Hunn", "THE SOFTWARE IS PROVIDED \"AS IS\""]
 HANDOFF_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work"]
-BUILDER_MARKERS = [
-    "Feature Branch Workflow",
-    "Git cannot safely hold both `feature/foo` and `feature/foo/bar` as branches",
-    "Do not nest Git worktrees inside other Git worktrees",
-    "subfeature/<feature-slug>--<sub-feature-path-slug>",
-    "patch/<feature-slug>--<sub-feature-path-slug>--<patch-id>",
-    "patch branch merges into its affected task branch, sub-feature branch, or feature branch",
-    "Builder must not batch patches",
-    "Required Feature Worktree Workflow Documentation",
-    "Required Task Slice Documentation",
-    "Required Patch Documentation",
-]
+BUILDER_MARKERS = ["Feature Branch Workflow", "Git cannot safely hold both `feature/foo` and `feature/foo/bar` as branches", "Do not nest Git worktrees inside other Git worktrees", "subfeature/<feature-slug>--<sub-feature-path-slug>", "patch/<feature-slug>--<sub-feature-path-slug>--<patch-id>", "patch branch merges into its affected task branch, sub-feature branch, or feature branch", "Builder must not batch patches", "Required Feature Worktree Workflow Documentation", "Required Task Slice Documentation", "Required Patch Documentation"]
 PY_MARKERS = ["PROOF_GUARDS", "validate_handoff_for_guard", "task_slice_complete", "patch_task_complete", "S7D_PATCH_TASK_IMPLEMENTATION"]
-JS_MARKERS = ["PROOF_GUARDS", "validateHandoffObject", "validate_handoff", "task_slice_complete", "patch_task_complete", "S7D_PATCH_TASK_IMPLEMENTATION"]
+DISPATCHER_MARKERS = ["ACTION_AGENT_FILES", "CONTROLLER_ACTIONS", "resolve_action", "load_action", "dispatch_and_load"]
+JS_MARKERS = ["PROOF_GUARDS", "validateHandoffObject", "validate_handoff", "resolveActions", "loadActions", "dispatch_and_load", "task_slice_complete", "patch_task_complete", "S7D_PATCH_TASK_IMPLEMENTATION"]
 
 PY_CHECK = """
 import copy, importlib.util, sys
@@ -79,6 +69,32 @@ except ValueError as exc:
 print('ok')
 """
 
+DISPATCHER_CHECK = """
+import importlib.util, sys
+from pathlib import Path
+p = Path(r'{path}')
+spec = importlib.util.spec_from_file_location('dispatcher_under_test', p)
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod
+spec.loader.exec_module(mod)
+resolved = mod.resolve_action('run_socrates')
+assert resolved.kind == 'agent'
+assert resolved.relative_path == 'agents/socrates.md'
+loaded = mod.load_action('run_builder_task_slice_planning')
+assert loaded['kind'] == 'agent'
+assert loaded['agent_file'] == 'builder-1986.md'
+assert isinstance(loaded['content'], str) and 'Builder 1986' in loaded['content']
+controller = mod.load_action('check_build_package')
+assert controller['kind'] == 'controller'
+assert controller['content'] is None
+try:
+    mod.resolve_action('../agents/socrates.md')
+    raise AssertionError('arbitrary path action accepted')
+except KeyError:
+    pass
+print('ok')
+"""
+
 NODE_CHECK = """
 const plugin = require(process.argv[2]);
 (async () => {
@@ -86,6 +102,14 @@ const plugin = require(process.argv[2]);
   if (typeof handler !== 'function') throw new Error('runtime.handler missing');
   const start = JSON.parse(await handler({operation:'dispatch', state:'S0_INTAKE', event:'new_request'}));
   if (!start.ok || start.to_state !== 'S1_PROBLEM_EXAMINATION') throw new Error('bad start transition');
+  const loadedStart = JSON.parse(await handler({operation:'dispatch_and_load', state:'S0_INTAKE', event:'new_request'}));
+  if (!loadedStart.dispatch.ok || loadedStart.loaded_actions[0].agent_file !== 'socrates.md') throw new Error('dispatch_and_load did not load Socrates');
+  const resolved = JSON.parse(await handler({operation:'resolve_actions', action:'run_builder_task_slice_planning'}));
+  if (resolved.actions[0].relative_path !== 'agents/builder-1986.md') throw new Error('builder action did not resolve');
+  const loaded = JSON.parse(await handler({operation:'load_actions', action:'run_builder_task_slice_planning'}));
+  if (!String(loaded.actions[0].content).includes('Builder 1986')) throw new Error('builder content did not load');
+  const controller = JSON.parse(await handler({operation:'load_actions', action:'check_build_package'}));
+  if (controller.actions[0].kind !== 'controller' || controller.actions[0].content !== null) throw new Error('controller action loaded incorrectly');
   const bad = JSON.parse(await handler({operation:'dispatch', state:'S7_TASK_SLICE_IMPLEMENTATION', event:'task_slice_complete'}));
   if (bad.ok || !String(bad.error).includes('Required proof handoff missing')) throw new Error('missing handoff accepted');
   const tmpl = await handler({operation:'handoff_template'});
@@ -149,13 +173,22 @@ def check_toml(errors: list[str], path: Path) -> None:
             add(errors, f"{rel(path)} missing TOML section [{section}]")
 
 
-def run_python_machine(errors: list[str], path: Path) -> None:
-    contains(errors, path, PY_MARKERS)
+def run_python_snippet(errors: list[str], path: Path, snippet: str, label: str) -> None:
     if not path.is_file():
         return
-    result = subprocess.run([sys.executable, "-c", PY_CHECK.format(path=str(path))], cwd=ROOT, text=True, capture_output=True)
+    result = subprocess.run([sys.executable, "-c", snippet.format(path=str(path))], cwd=ROOT, text=True, capture_output=True)
     if result.returncode != 0:
-        add(errors, f"state machine failed {rel(path)}: {result.stderr.strip() or result.stdout.strip()}")
+        add(errors, f"{label} failed {rel(path)}: {result.stderr.strip() or result.stdout.strip()}")
+
+
+def run_python_machine(errors: list[str], path: Path) -> None:
+    contains(errors, path, PY_MARKERS)
+    run_python_snippet(errors, path, PY_CHECK, "state machine")
+
+
+def run_python_dispatcher(errors: list[str], path: Path) -> None:
+    contains(errors, path, DISPATCHER_MARKERS)
+    run_python_snippet(errors, path, DISPATCHER_CHECK, "dispatcher")
 
 
 def run_node_handler(errors: list[str], path: Path) -> None:
@@ -194,6 +227,7 @@ def check_package(errors: list[str], base: Path, *, skill: bool) -> None:
     if skill:
         check_front_matter(errors, base / "SKILL.md")
         run_python_machine(errors, base / "scripts" / "state_machine.py")
+        run_python_dispatcher(errors, base / "scripts" / "dispatcher.py")
 
 
 def check_anything(errors: list[str]) -> None:
@@ -208,12 +242,13 @@ def check_anything(errors: list[str]) -> None:
             add(errors, f"invalid AnythingLLM plugin.json: {exc}")
         else:
             desc = plugin.get("description", "")
-            for marker in ["flat Git worktrees", "one-task-at-a-time", "one-patch-at-a-time", "proof-carrying handoff validation"]:
+            for marker in ["flat Git worktrees", "one-task-at-a-time", "one-patch-at-a-time", "proof-carrying handoff validation", "fixed action-to-agent dispatch/loading"]:
                 if marker not in desc:
                     add(errors, f"AnythingLLM plugin description missing marker: {marker}")
             op_desc = plugin.get("entrypoint", {}).get("params", {}).get("operation", {}).get("description", "")
-            if "validate_handoff" not in op_desc:
-                add(errors, "AnythingLLM operation description missing validate_handoff")
+            for marker in ["validate_handoff", "resolve_actions", "load_actions", "dispatch_and_load"]:
+                if marker not in op_desc:
+                    add(errors, f"AnythingLLM operation description missing {marker}")
             if plugin.get("entrypoint", {}).get("file") != "handler.js":
                 add(errors, "AnythingLLM entrypoint.file must be handler.js")
     run_node_handler(errors, ANYTHING / "handler.js")
