@@ -10,6 +10,8 @@ This repository packages the same workflow for three runtimes:
 
 Each runtime package is self-contained and can be copied independently.
 
+See [Software Map](docs/architecture/software-map.md) for the repo-level application map of runtime packages, handoff artifacts, verifiers, workflows, proof models, and philosopher-stack ownership.
+
 ## The Pattern
 
 ```text
