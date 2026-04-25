@@ -20,11 +20,13 @@ ANYTHING = ROOT / "anythingllm" / "plugins" / "agent-skills" / "the-design-philo
 
 AGENTS = ["README.md", "socrates.md", "plato.md", "aristotle.md", "bacon.md", "hoare.md", "epictetus.md", "diogenes.md", "builder-1986.md"]
 LICENSE_MARKERS = ["MIT License", "Copyright (c) 2026 Danny Hunn", "THE SOFTWARE IS PROVIDED \"AS IS\""]
-HANDOFF_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work"]
+HANDOFF_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "markdown_links"]
 BUILDER_MARKERS = ["Feature Branch Workflow", "Git cannot safely hold both `feature/foo` and `feature/foo/bar` as branches", "Do not nest Git worktrees inside other Git worktrees", "subfeature/<feature-slug>--<sub-feature-path-slug>", "patch/<feature-slug>--<sub-feature-path-slug>--<patch-id>", "patch branch merges into its affected task branch, sub-feature branch, or feature branch", "Builder must not batch patches", "Required Feature Worktree Workflow Documentation", "Required Task Slice Documentation", "Required Patch Documentation"]
+PLATO_MARKERS = ["Plato owns the PRD-level product artifact", "Create a PRD as a Markdown file", "templates/prd.md", "[markdown_links]", "prd = [\"docs/product/prd.md\"]"]
+PRD_TEMPLATE_MARKERS = ["# Product Requirements Document", "## Product Identity", "## Source Problem", "## Users", "## Goals", "## Non-Goals", "## V1 Boundary", "## Functional Requirements", "## Product Constraints", "## Success Criteria", "## Acceptance Direction"]
 PY_MARKERS = ["PROOF_GUARDS", "validate_handoff_for_guard", "task_slice_complete", "patch_task_complete", "S7D_PATCH_TASK_IMPLEMENTATION"]
 DISPATCHER_MARKERS = ["ACTION_AGENT_FILES", "CONTROLLER_ACTIONS", "resolve_action", "load_action", "dispatch_and_load"]
-JS_MARKERS = ["PROOF_GUARDS", "validateHandoffObject", "validate_handoff", "resolveActions", "loadActions", "dispatch_and_load", "task_slice_complete", "patch_task_complete", "S7D_PATCH_TASK_IMPLEMENTATION"]
+JS_MARKERS = ["PROOF_GUARDS", "validateHandoffObject", "validate_handoff", "resolveActions", "loadActions", "dispatch_and_load", "task_slice_complete", "patch_task_complete", "S7D_PATCH_TASK_IMPLEMENTATION", "prd = []", "PRD Markdown from Plato"]
 
 PY_CHECK = """
 import copy, importlib.util, sys
@@ -115,6 +117,7 @@ const plugin = require(process.argv[2]);
   const bad = JSON.parse(await handler({operation:'dispatch', state:'S7_TASK_SLICE_IMPLEMENTATION', event:'task_slice_complete'}));
   if (bad.ok || !String(bad.error).includes('Required proof handoff missing')) throw new Error('missing handoff accepted');
   const tmpl = await handler({operation:'handoff_template'});
+  if (!tmpl.includes('prd = []')) throw new Error('handoff template missing PRD markdown link');
   const validation = JSON.parse(await handler({operation:'validate_handoff', artifact_toml:tmpl, guard:'task_documentation_updated'}));
   if (validation.ok || validation.errors.length === 0) throw new Error('bad handoff accepted');
   const happy = JSON.parse(await handler({operation:'happy_path'}));
@@ -173,6 +176,9 @@ def check_toml(errors: list[str], path: Path) -> None:
     for section in HANDOFF_SECTIONS:
         if section not in parsed:
             add(errors, f"{rel(path)} missing TOML section [{section}]")
+    links = parsed.get("markdown_links", {})
+    if not isinstance(links, dict) or "prd" not in links:
+        add(errors, f"{rel(path)} missing [markdown_links].prd")
 
 
 def run_python_snippet(errors: list[str], path: Path, snippet: str, label: str) -> None:
@@ -225,6 +231,8 @@ def check_package(errors: list[str], base: Path, *, skill: bool) -> None:
     for agent in AGENTS:
         require_file(errors, base / "agents" / agent)
     contains(errors, base / "agents" / "builder-1986.md", BUILDER_MARKERS)
+    contains(errors, base / "agents" / "plato.md", PLATO_MARKERS)
+    contains(errors, base / "templates" / "prd.md", PRD_TEMPLATE_MARKERS)
     check_toml(errors, base / "templates" / "handoff.toml")
     if skill:
         check_front_matter(errors, base / "SKILL.md")
