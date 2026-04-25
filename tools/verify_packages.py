@@ -110,6 +110,8 @@ const plugin = require(process.argv[2]);
   if (!String(loaded.actions[0].content).includes('Builder 1986')) throw new Error('builder content did not load');
   const controller = JSON.parse(await handler({operation:'load_actions', action:'check_build_package'}));
   if (controller.actions[0].kind !== 'controller' || controller.actions[0].content !== null) throw new Error('controller action loaded incorrectly');
+  const pathLike = JSON.parse(await handler({operation:'load_actions', action:'../agents/socrates.md'}));
+  if (pathLike.ok !== false || !String(pathLike.error).includes('unknown state-machine action')) throw new Error('path-like action accepted');
   const bad = JSON.parse(await handler({operation:'dispatch', state:'S7_TASK_SLICE_IMPLEMENTATION', event:'task_slice_complete'}));
   if (bad.ok || !String(bad.error).includes('Required proof handoff missing')) throw new Error('missing handoff accepted');
   const tmpl = await handler({operation:'handoff_template'});
