@@ -27,6 +27,7 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
+| 2026-04-25 12:35:00 -05:00 | Architecture docs | Added the repo-level software map artifact, linked it from the README, added architecture handoff links, and documented Aristotle ownership of the software map. | `cf337918633acbd567ee1a1cc890ed9c715636da` |
 | 2026-04-25 12:10:00 -05:00 | Repository docs | Added a concise README pattern summary near the top of the file. | `c67dd150206543d88c6937f753c2d215db54f0f0` |
 | 2026-04-25 11:25:00 -05:00 | Verification | Added a CI changelog policy verifier to distinguish meaningful repository changes from changelog-only hash finalization and prevent recursive changelog loops. | `46bae4bd821aaa3a6695e081b983b6cb2e37a87c` |
 | 2026-04-25 11:10:00 -05:00 | Repository docs | Documented the changelog-only maintenance exception to prevent recursive changelog loops. | `6241976d259976473c6c7b89a1be631ff0b824f7` |

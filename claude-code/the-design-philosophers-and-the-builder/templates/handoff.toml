@@ -104,6 +104,7 @@ reason = ""
 
 [markdown_links]
 prd = []
+architecture = []
 reports = []
 rationale = []
 postmortems = []
