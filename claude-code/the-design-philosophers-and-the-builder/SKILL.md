@@ -1,14 +1,14 @@
 ---
 name: "the-design-philosophers-and-the-builder"
 description: >-
-  Use this skill when designing software from scratch and you need a bounded Mealy-style workflow that prevents agent drift, user drift, silent scope expansion, lump-build implementation, missing collision-free Feature Branch Workflow backed by flat Git worktrees, missing one-task-at-a-time worktree slicing, missing fixed action-to-agent dispatch/loading, and missing one-patch-at-a-time post-build patch discipline.
+  Use this skill when designing software from scratch and you need a bounded Mealy-style workflow that prevents agent drift, user drift, silent scope expansion, lump-build implementation, missing collision-free Feature Branch Workflow backed by flat Git worktrees, missing one-task-at-a-time worktree slicing, missing Plato PRD Markdown output, missing fixed action-to-agent dispatch/loading, and missing one-patch-at-a-time post-build patch discipline.
 ---
 
 # The Design Philosophers and the Builder
 
 ## Purpose
 
-Use this skill in Claude Code when designing software from scratch, turning a vague idea into a buildable system, reviewing scope changes, forcing implementation through smallest safe build slices, enforcing Feature Branch Workflow backed by flat Git worktrees, slicing work inside each worktree into one task at a time, loading the correct bundled agent prompt from a state-machine action, or requiring post-build security review and one-patch-at-a-time patching.
+Use this skill in Claude Code when designing software from scratch, turning a vague idea into a buildable system, reviewing scope changes, forcing implementation through smallest safe build slices, enforcing Feature Branch Workflow backed by flat Git worktrees, slicing work inside each worktree into one task at a time, loading the correct bundled agent prompt from a state-machine action, requiring Plato to create a PRD Markdown file before Aristotle designs architecture, or requiring post-build security review and one-patch-at-a-time patching.
 
 Current state plus event determines next state plus action.
 
@@ -42,14 +42,17 @@ The Markdown agents and TOML templates are plain text. Running `scripts/state_ma
 - `scripts/state_machine.py`
 - `scripts/dispatcher.py`
 - `templates/handoff.toml`
+- `templates/prd.md`
 
 ## Artifact Rule
 
 Formal handoffs are TOML. Long-form prose is Markdown linked from TOML. The state machine consumes TOML, not Markdown.
 
+Plato must create or update a PRD Markdown file before emitting `ideal_model_complete`. The normal PRD path is `docs/product/prd.md`, and that path must be linked from `[markdown_links].prd` in the TOML handoff.
+
 ## Agent Chain
 
-Socrates bounds the problem. Plato defines the scoped ideal. Aristotle derives structure. Bacon defines proof. Hoare defines correctness. Epictetus defines failure discipline. Diogenes cuts excess. Builder 1986 creates or initializes the GitHub repo, recursively identifies features and sub-features, creates collision-free branches and flat Git worktree checkout folders, uses the Feature Branch Workflow, slices each worktree into one task at a time, implements, verifies, then documents each task slice as the final task step. After the built system exists, Builder 1986 performs a post-build security review, creates a needed patch list in sensible order, and applies each patch one patch-task at a time with its own branch/worktree context, Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, targeted tests, affected regression tests, and documentation update. Diogenes, Bacon, Hoare, and Epictetus review after patching. Parent admits only if the state machine held.
+Socrates bounds the problem. Plato creates the PRD-level product artifact as Markdown and links it from the TOML handoff. Aristotle derives structure from that PRD. Bacon defines proof. Hoare defines correctness. Epictetus defines failure discipline. Diogenes cuts excess. Builder 1986 creates or initializes the GitHub repo, recursively identifies features and sub-features, creates collision-free branches and flat Git worktree checkout folders, uses the Feature Branch Workflow, slices each worktree into one task at a time, implements, verifies, then documents each task slice as the final task step. After the built system exists, Builder 1986 performs a post-build security review, creates a needed patch list in sensible order, and applies each patch one patch-task at a time with its own branch/worktree context, Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, targeted tests, affected regression tests, and documentation update. Diogenes, Bacon, Hoare, and Epictetus review after patching. Parent admits only if the state machine held.
 
 ## Action Dispatcher Loader
 
@@ -86,4 +89,4 @@ Builder must not batch patches. After implementation is complete, Builder must r
 
 ## Required Output Shape
 
-For formal handoff, write TOML matching `templates/handoff.toml`. For long-form rationale, write Markdown and link it from the TOML handoff.
+For formal handoff, write TOML matching `templates/handoff.toml`. For Plato PRDs and other long-form rationale, write Markdown and link it from the TOML handoff.
