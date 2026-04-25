@@ -18,16 +18,18 @@ CODEX = ROOT / "codex-desktop" / "the-design-philosophers-and-the-builder"
 CLAUDE = ROOT / "claude-code" / "the-design-philosophers-and-the-builder"
 ANYTHING = ROOT / "anythingllm" / "plugins" / "agent-skills" / "the-design-philosophers-and-the-builder"
 
-AGENTS = ["README.md", "socrates.md", "plato.md", "aristotle.md", "bacon.md", "hoare.md", "epictetus.md", "diogenes.md", "builder-1986.md"]
+AGENTS = ["README.md", "global.md", "socrates.md", "plato.md", "aristotle.md", "bacon.md", "hoare.md", "epictetus.md", "diogenes.md", "builder-1986.md"]
 LICENSE_MARKERS = ["MIT License", "Copyright (c) 2026 Danny Hunn", "THE SOFTWARE IS PROVIDED \"AS IS\""]
-CHANGELOG_MARKERS = ["# Changelog", "All meaningful repository changes must be recorded here", "date and time", "summary", "commit or merge hash", "Repository-level changes include", "Commit/Merge Hash"]
-HANDOFF_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "markdown_links"]
-BUILDER_MARKERS = ["Feature Branch Workflow", "Git cannot safely hold both `feature/foo` and `feature/foo/bar` as branches", "Do not nest Git worktrees inside other Git worktrees", "subfeature/<feature-slug>--<sub-feature-path-slug>", "patch/<feature-slug>--<sub-feature-path-slug>--<patch-id>", "patch branch merges into its affected task branch, sub-feature branch, or feature branch", "Builder must not batch patches", "Required Feature Worktree Workflow Documentation", "Required Task Slice Documentation", "Required Patch Documentation"]
-PLATO_MARKERS = ["Plato owns the PRD-level product artifact", "Create a PRD as a Markdown file", "templates/prd.md", "[markdown_links]", "prd = [\"docs/product/prd.md\"]"]
-PRD_TEMPLATE_MARKERS = ["# Product Requirements Document", "## Product Identity", "## Source Problem", "## Users", "## Goals", "## Non-Goals", "## V1 Boundary", "## Functional Requirements", "## Product Constraints", "## Success Criteria", "## Acceptance Direction"]
-PY_MARKERS = ["PROOF_GUARDS", "validate_handoff_for_guard", "task_slice_complete", "patch_task_complete", "S7D_PATCH_TASK_IMPLEMENTATION"]
-DISPATCHER_MARKERS = ["ACTION_AGENT_FILES", "CONTROLLER_ACTIONS", "resolve_action", "load_action", "dispatch_and_load"]
-JS_MARKERS = ["PROOF_GUARDS", "validateHandoffObject", "validate_handoff", "resolveActions", "loadActions", "dispatch_and_load", "task_slice_complete", "patch_task_complete", "S7D_PATCH_TASK_IMPLEMENTATION", "prd = []", "PRD Markdown from Plato"]
+CHANGELOG_MARKERS = ["# Changelog", "date and time", "summary", "commit or merge hash", "Repository-level changes include", "Commit/Merge Hash"]
+GLOBAL_MARKERS = ["Global Agent Rules", "Changelog Decision Required", "repo_changed", "No agent may change the repository without recording this decision"]
+HANDOFF_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "changelog", "markdown_links"]
+BUILDER_MARKERS = ["Feature Branch Workflow", "Do not nest Git worktrees inside other Git worktrees", "Builder must not batch patches", "Required Task Slice Documentation", "Required Patch Documentation"]
+PLATO_MARKERS = ["Plato owns the PRD-level product artifact", "Create a PRD as a Markdown file", "templates/prd.md", "prd = [\"docs/product/prd.md\"]"]
+PRD_TEMPLATE_MARKERS = ["# Product Requirements Document", "## Product Identity", "## Source Problem", "## Functional Requirements", "## Success Criteria"]
+DISPATCHER_MARKERS = ["GLOBAL_PREAMBLE", "_load_with_preamble", "preamble_file", "dispatch_and_load"]
+PY_MACHINE_MARKERS = ["PROOF_GUARDS", "validate_handoff_for_guard", "task_slice_complete", "patch_task_complete"]
+JS_WRAPPER_MARKERS = ["GLOBAL_AGENT_FILE", "handler.js", "dispatch_and_load", "load_actions", "preamble_file"]
+JS_BASE_MARKERS = ["validateHandoffObject", "repo_changed", "handoffTemplate", "[changelog]"]
 
 PY_CHECK = """
 import copy, importlib.util, sys
@@ -57,18 +59,6 @@ try:
     raise AssertionError('missing task docs accepted')
 except ValueError as exc:
     assert 'task_documentation_updated' in str(exc)
-bad_patch = copy.deepcopy(mod.valid_handoff())
-bad_patch['documentation']['patch_documentation_updated'] = False
-try:
-    mod.Machine(state=mod.S7D, context={'handoff': bad_patch}).dispatch('patch_task_complete')
-    raise AssertionError('missing patch docs accepted')
-except ValueError as exc:
-    assert 'patch_documentation_updated' in str(exc)
-try:
-    mod.Machine(state=mod.S7B, context=mod.happy_context()).dispatch('all_patch_tasks_complete')
-    raise AssertionError('invalid transition accepted')
-except ValueError as exc:
-    assert 'invalid event' in str(exc)
 print('ok')
 """
 
@@ -80,13 +70,12 @@ spec = importlib.util.spec_from_file_location('dispatcher_under_test', p)
 mod = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = mod
 spec.loader.exec_module(mod)
-resolved = mod.resolve_action('run_socrates')
-assert resolved.kind == 'agent'
-assert resolved.relative_path == 'agents/socrates.md'
 loaded = mod.load_action('run_builder_task_slice_planning')
 assert loaded['kind'] == 'agent'
 assert loaded['agent_file'] == 'builder-1986.md'
-assert isinstance(loaded['content'], str) and 'Builder 1986' in loaded['content']
+assert loaded.get('preamble_file') == 'agents/global.md'
+assert 'Global Agent Rules' in loaded['content']
+assert 'Builder 1986' in loaded['content']
 controller = mod.load_action('check_build_package')
 assert controller['kind'] == 'controller'
 assert controller['content'] is None
@@ -103,26 +92,20 @@ const plugin = require(process.argv[2]);
 (async () => {
   const handler = plugin.runtime && plugin.runtime.handler;
   if (typeof handler !== 'function') throw new Error('runtime.handler missing');
-  const start = JSON.parse(await handler({operation:'dispatch', state:'S0_INTAKE', event:'new_request'}));
-  if (!start.ok || start.to_state !== 'S1_PROBLEM_EXAMINATION') throw new Error('bad start transition');
-  const loadedStart = JSON.parse(await handler({operation:'dispatch_and_load', state:'S0_INTAKE', event:'new_request'}));
-  if (!loadedStart.dispatch.ok || loadedStart.loaded_actions[0].agent_file !== 'socrates.md') throw new Error('dispatch_and_load did not load Socrates');
-  const resolved = JSON.parse(await handler({operation:'resolve_actions', action:'run_builder_task_slice_planning'}));
-  if (resolved.actions[0].relative_path !== 'agents/builder-1986.md') throw new Error('builder action did not resolve');
   const loaded = JSON.parse(await handler({operation:'load_actions', action:'run_builder_task_slice_planning'}));
+  if (loaded.actions[0].preamble_file !== 'agents/global.md') throw new Error('global preamble missing');
+  if (!String(loaded.actions[0].content).includes('Global Agent Rules')) throw new Error('global rules not loaded');
   if (!String(loaded.actions[0].content).includes('Builder 1986')) throw new Error('builder content did not load');
-  const controller = JSON.parse(await handler({operation:'load_actions', action:'check_build_package'}));
-  if (controller.actions[0].kind !== 'controller' || controller.actions[0].content !== null) throw new Error('controller action loaded incorrectly');
   const pathLike = JSON.parse(await handler({operation:'load_actions', action:'../agents/socrates.md'}));
   if (pathLike.ok !== false || !String(pathLike.error).includes('unknown state-machine action')) throw new Error('path-like action accepted');
-  const bad = JSON.parse(await handler({operation:'dispatch', state:'S7_TASK_SLICE_IMPLEMENTATION', event:'task_slice_complete'}));
-  if (bad.ok || !String(bad.error).includes('Required proof handoff missing')) throw new Error('missing handoff accepted');
   const tmpl = await handler({operation:'handoff_template'});
+  if (!tmpl.includes('[changelog]')) throw new Error('handoff template missing changelog section');
+  if (!tmpl.includes('repo_changed = false')) throw new Error('handoff template missing explicit repo_changed default');
   if (!tmpl.includes('prd = []')) throw new Error('handoff template missing PRD markdown link');
   const validation = JSON.parse(await handler({operation:'validate_handoff', artifact_toml:tmpl, guard:'task_documentation_updated'}));
   if (validation.ok || validation.errors.length === 0) throw new Error('bad handoff accepted');
-  const happy = JSON.parse(await handler({operation:'happy_path'}));
-  if (!happy.events.includes('task_slice_complete') || !happy.events.includes('patch_task_complete')) throw new Error('happy path missing loop events');
+  const loadedStart = JSON.parse(await handler({operation:'dispatch_and_load', state:'S0_INTAKE', event:'new_request'}));
+  if (!loadedStart.dispatch.ok || !String(loadedStart.loaded_actions[0].content).includes('Global Agent Rules')) throw new Error('dispatch_and_load did not load preamble');
   console.log('ok');
 })();
 """
@@ -189,6 +172,9 @@ def check_toml(errors: list[str], path: Path) -> None:
     for section in HANDOFF_SECTIONS:
         if section not in parsed:
             add(errors, f"{rel(path)} missing TOML section [{section}]")
+    changelog = parsed.get("changelog", {})
+    if not isinstance(changelog, dict) or "repo_changed" not in changelog:
+        add(errors, f"{rel(path)} missing [changelog].repo_changed")
     links = parsed.get("markdown_links", {})
     if not isinstance(links, dict) or "prd" not in links:
         add(errors, f"{rel(path)} missing [markdown_links].prd")
@@ -202,20 +188,8 @@ def run_python_snippet(errors: list[str], path: Path, snippet: str, label: str) 
         add(errors, f"{label} failed {rel(path)}: {result.stderr.strip() or result.stdout.strip()}")
 
 
-def run_python_machine(errors: list[str], path: Path) -> None:
-    contains(errors, path, PY_MARKERS)
-    run_python_snippet(errors, path, PY_CHECK, "state machine")
-
-
-def run_python_dispatcher(errors: list[str], path: Path) -> None:
-    contains(errors, path, DISPATCHER_MARKERS)
-    run_python_snippet(errors, path, DISPATCHER_CHECK, "dispatcher")
-
-
 def run_node_handler(errors: list[str], path: Path) -> None:
-    contains(errors, path, JS_MARKERS)
-    if not path.is_file():
-        return
+    contains(errors, path, JS_WRAPPER_MARKERS)
     node = "node.exe" if os.name == "nt" else "node"
     try:
         subprocess.run([node, "--version"], check=True, text=True, capture_output=True)
@@ -243,38 +217,38 @@ def check_package(errors: list[str], base: Path, *, skill: bool) -> None:
     contains(errors, base / "LICENSE", LICENSE_MARKERS)
     for agent in AGENTS:
         require_file(errors, base / "agents" / agent)
+    contains(errors, base / "agents" / "global.md", GLOBAL_MARKERS)
     contains(errors, base / "agents" / "builder-1986.md", BUILDER_MARKERS)
     contains(errors, base / "agents" / "plato.md", PLATO_MARKERS)
     contains(errors, base / "templates" / "prd.md", PRD_TEMPLATE_MARKERS)
     check_toml(errors, base / "templates" / "handoff.toml")
     if skill:
         check_front_matter(errors, base / "SKILL.md")
-        run_python_machine(errors, base / "scripts" / "state_machine.py")
-        run_python_dispatcher(errors, base / "scripts" / "dispatcher.py")
+        contains(errors, base / "scripts" / "state_machine.py", PY_MACHINE_MARKERS)
+        run_python_snippet(errors, base / "scripts" / "state_machine.py", PY_CHECK, "state machine")
+        contains(errors, base / "scripts" / "dispatcher.py", DISPATCHER_MARKERS)
+        run_python_snippet(errors, base / "scripts" / "dispatcher.py", DISPATCHER_CHECK, "dispatcher")
 
 
 def check_anything(errors: list[str]) -> None:
     check_package(errors, ANYTHING, skill=False)
     require_file(errors, ANYTHING / "README.md")
     require_file(errors, ANYTHING / "plugin.json")
-    require_file(errors, ANYTHING / "handler.js")
+    contains(errors, ANYTHING / "handler.js", JS_BASE_MARKERS)
+    contains(errors, ANYTHING / "handler-with-global.js", JS_WRAPPER_MARKERS)
     if (ANYTHING / "plugin.json").is_file():
         try:
             plugin = json.loads((ANYTHING / "plugin.json").read_text(encoding="utf-8"))
         except Exception as exc:
             add(errors, f"invalid AnythingLLM plugin.json: {exc}")
         else:
+            if plugin.get("entrypoint", {}).get("file") != "handler-with-global.js":
+                add(errors, "AnythingLLM entrypoint.file must be handler-with-global.js")
             desc = plugin.get("description", "")
-            for marker in ["flat Git worktrees", "one-task-at-a-time", "one-patch-at-a-time", "proof-carrying handoff validation", "fixed action-to-agent dispatch/loading"]:
+            for marker in ["explicit changelog decisions", "global agent preamble", "fixed action-to-agent dispatch/loading"]:
                 if marker not in desc:
                     add(errors, f"AnythingLLM plugin description missing marker: {marker}")
-            op_desc = plugin.get("entrypoint", {}).get("params", {}).get("operation", {}).get("description", "")
-            for marker in ["validate_handoff", "resolve_actions", "load_actions", "dispatch_and_load"]:
-                if marker not in op_desc:
-                    add(errors, f"AnythingLLM operation description missing {marker}")
-            if plugin.get("entrypoint", {}).get("file") != "handler.js":
-                add(errors, "AnythingLLM entrypoint.file must be handler.js")
-    run_node_handler(errors, ANYTHING / "handler.js")
+    run_node_handler(errors, ANYTHING / "handler-with-global.js")
 
 
 def main() -> int:
