@@ -19,6 +19,7 @@ Each runtime package is self-contained and can be copied independently.
 - Every formal handoff must explicitly set `[changelog].repo_changed` to `true` or `false`.
 - Pure analysis that does not touch the repository may set `repo_changed = false` and does not require a changelog entry.
 - Any repository-changing step must update `CHANGELOG.md` or mark the changelog hash as pending in the handoff.
+- Changelog-only maintenance commits that replace `PENDING` with a known commit or merge hash do not require their own changelog entry.
 - Plato must create or update a PRD Markdown file before Aristotle designs architecture.
 - The PRD path must be linked from `[markdown_links].prd` in the TOML handoff.
 - Every meaningful repository change must be recorded in `CHANGELOG.md`, including repository-level changes, not just source-code changes.
@@ -188,7 +189,7 @@ Each changelog entry must include:
 - summary
 - commit or merge hash
 
-A commit cannot know its own final hash before it is created. If needed, the next changelog-maintenance commit may record the previous changelog commit hash.
+A commit cannot know its own final hash before it is created. If needed, a later changelog-maintenance commit may replace a `PENDING` marker with the known commit or merge hash. That changelog-only maintenance commit is not itself a meaningful repository change for changelog-entry purposes and does not require a new changelog entry.
 
 ## Builder Feature Branch Workflow
 
@@ -453,6 +454,8 @@ tools/                package verification and maintenance tools
 The three runtime packages are intentionally self-contained. When changing behavior, update all runtime packages or run `tools/verify_packages.py` and fix drift before considering the work complete.
 
 Also update `CHANGELOG.md` for meaningful repository changes. This includes repo-level changes such as documentation, CI workflows, package metadata, proof models, verification scripts, templates, licensing, repository layout, and maintenance policy changes.
+
+Changelog-only maintenance commits that replace a `PENDING` marker with a known commit or merge hash are bookkeeping cleanup and do not require another changelog entry.
 
 ## License
 
