@@ -25,6 +25,7 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
+| 2026-04-25 06:20:04 -05:00 | Repository docs | Documented the changelog rule in the root README, including repo-level change coverage and required fields. | `5d5fb26b0f7d38497c4f5a807c3d83db318ac5d8` |
 | 2026-04-25 06:18:33 -05:00 | Verification | Updated package verifier to require a repository changelog with date/time, summary, scope, and commit/merge hash entries. | `f606c07370730760427138ea836fba95e742ca44` |
 | 2026-04-25 06:17:21 -05:00 | Repository docs | Added `CHANGELOG.md` and documented that repository-level changes, not only source-code changes, must be recorded. | `417aea553798fc569a063ac007985f5b6062ea90` |
 | 2026-04-25 06:15:09 -05:00 | Repository docs | Documented Plato PRD workflow, including PRD handoff rules and verifier coverage. | `4a25e1a5e922e230f6f200f0160c7d7ca46a1189` |
