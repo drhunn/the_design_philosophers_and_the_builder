@@ -73,6 +73,69 @@ summary = ""
 allowed = []
 forbidden = []
 
+[git]
+repository = ""
+remote = ""
+base_branch = "main"
+active_branch = ""
+branch_namespace = ""
+branch_is_collision_free = false
+worktree_path = ""
+worktree_is_flat_sibling = false
+worktree_verified = false
+merge_target = ""
+merge_path = []
+
+[task]
+task_id = ""
+feature_slug = ""
+subfeature_path_slug = ""
+task_slug = ""
+purpose = ""
+status = "not_started"
+touched_files = []
+allowed_files = []
+expected_behavior = ""
+
+[patch]
+patch_task_id = ""
+patch_id = ""
+kind = ""
+risk_or_defect = ""
+affected_branch = ""
+affected_worktree_path = ""
+merge_target = ""
+merge_path = []
+allowed_files = []
+touched_files = []
+status = "not_started"
+
+[validation]
+bacon_checks = []
+bacon_passed = false
+hoare_obligations = []
+hoare_passed = false
+epictetus_obligations = []
+epictetus_passed = false
+diogenes_cut_check = ""
+diogenes_passed = false
+targeted_tests = []
+regression_tests = []
+tests_passed = false
+
+[documentation]
+task_documentation_path = ""
+task_documentation_updated = false
+patch_documentation_path = ""
+patch_documentation_updated = false
+postmortem_paths = []
+
+[remaining_work]
+remaining_task_slices = []
+remaining_patch_tasks = []
+no_remaining_task_slices = false
+no_remaining_patch_tasks = false
+
 [findings]
 summary = ""
 
