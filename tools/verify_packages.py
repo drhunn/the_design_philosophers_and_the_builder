@@ -6,8 +6,12 @@ import re
 import subprocess
 import sys
 import tempfile
-import tomllib
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
+    import tomli as tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -27,6 +31,21 @@ AGENT_FILES = [
     "builder-1986.md",
 ]
 
+LICENSE_MARKERS = [
+    "MIT License",
+    "Copyright (c) 2026 Danny Hunn",
+    "THE SOFTWARE IS PROVIDED \"AS IS\"",
+]
+
+HANDOFF_REQUIRED_SECTIONS = [
+    "git",
+    "task",
+    "patch",
+    "validation",
+    "documentation",
+    "remaining_work",
+]
+
 BUILDER_REQUIRED_MARKERS = [
     "Feature Branch Workflow",
     "recursively identify and list the sub-features",
@@ -38,6 +57,7 @@ BUILDER_REQUIRED_MARKERS = [
     "Do not nest Git worktrees inside other Git worktrees",
     "../worktrees/<repo-slug>/feature--<feature-slug>/",
     "../worktrees/<repo-slug>/subfeature--<feature-slug>--<sub-feature-path-slug>/",
+    "patch branch merges into its affected task branch, sub-feature branch, or feature branch",
     "Run the mapped Bacon validation",
     "Check the mapped Hoare correctness obligations",
     "Check the mapped Epictetus operational obligations",
@@ -63,10 +83,12 @@ STATE_MACHINE_MARKERS = [
 
 PY_HAPPY_PATH_SNIPPET = """
 import importlib.util
+import sys
 from pathlib import Path
 p = Path(r'{path}')
 spec = importlib.util.spec_from_file_location('state_machine_under_test', p)
 mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod
 spec.loader.exec_module(mod)
 m = mod.Machine(context=mod.happy_context())
 visited = []
@@ -152,20 +174,23 @@ def check_toml(errors: list[str], path: Path) -> None:
     if not path.is_file():
         return
     try:
-        tomllib.loads(path.read_text(encoding="utf-8"))
+        parsed = tomllib.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
         fail(errors, f"invalid TOML {path.relative_to(ROOT)}: {exc}")
+        return
+    for section in HANDOFF_REQUIRED_SECTIONS:
+        if section not in parsed:
+            fail(errors, f"{path.relative_to(ROOT)} missing TOML section: [{section}]")
 
 
-def check_license(errors: list[str]) -> None:
-    path = ROOT / "LICENSE"
+def check_license_file(errors: list[str], path: Path) -> None:
     require_file(errors, path)
     if not path.is_file():
         return
     text = path.read_text(encoding="utf-8")
-    for marker in ["MIT License", "Copyright (c) 2026 Danny Hunn", "THE SOFTWARE IS PROVIDED \"AS IS\""]:
+    for marker in LICENSE_MARKERS:
         if marker not in text:
-            fail(errors, f"LICENSE missing marker: {marker}")
+            fail(errors, f"{path.relative_to(ROOT)} missing license marker: {marker}")
 
 
 def check_python_machine(errors: list[str], path: Path) -> None:
@@ -208,6 +233,7 @@ def check_package_common(errors: list[str], base: Path, skill: bool) -> None:
     require_dir(errors, base)
     require_dir(errors, base / "agents")
     require_dir(errors, base / "templates")
+    check_license_file(errors, base / "LICENSE")
     for name in AGENT_FILES:
         require_file(errors, base / "agents" / name)
     check_contains(errors, base / "agents" / "builder-1986.md", BUILDER_REQUIRED_MARKERS)
@@ -226,6 +252,10 @@ def check_anythingllm(errors: list[str]) -> None:
     if (ANYTHING / "plugin.json").is_file():
         try:
             plugin = json.loads((ANYTHING / "plugin.json").read_text(encoding="utf-8"))
+            description = plugin.get("description", "")
+            for marker in ["flat Git worktrees", "one-task-at-a-time", "one-patch-at-a-time"]:
+                if marker not in description:
+                    fail(errors, f"AnythingLLM plugin description missing marker: {marker}")
             if plugin.get("entrypoint", {}).get("file") != "handler.js":
                 fail(errors, "AnythingLLM plugin entrypoint.file must be handler.js")
             if plugin.get("hubId") != "the-design-philosophers-and-the-builder":
@@ -237,7 +267,7 @@ def check_anythingllm(errors: list[str]) -> None:
 
 def main() -> int:
     errors: list[str] = []
-    check_license(errors)
+    check_license_file(errors, ROOT / "LICENSE")
     check_package_common(errors, CODEX, skill=True)
     check_package_common(errors, CLAUDE, skill=True)
     check_anythingllm(errors)
