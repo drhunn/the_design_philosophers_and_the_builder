@@ -26,7 +26,7 @@ or project-local:
 
 ## Runtime Requirements
 
-The Markdown agents and TOML templates are plain text. Running `scripts/state_machine.py` or `scripts/dispatcher.py` directly requires Python 3.11 or newer because the state machine uses the standard-library `tomllib` module.
+The Markdown agents and TOML templates are plain text. Running `scripts/state_machine.py` directly requires Python 3.11 or newer because it uses the standard-library `tomllib` module. `scripts/dispatcher.py` is a fixed-map loader and should be run with the same supported package Python runtime.
 
 ## Bundled Files
 
