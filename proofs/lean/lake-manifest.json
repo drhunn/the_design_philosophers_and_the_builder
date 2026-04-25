@@ -1,1 +1,7 @@
-{"version":"1.0.0","packagesDir":".lake/packages","packages":[]}
+{
+  "version": "1.1.0",
+  "packagesDir": ".lake/packages",
+  "packages": [],
+  "name": "the_design_philosophers_proofs",
+  "lakeDir": ".lake"
+}
