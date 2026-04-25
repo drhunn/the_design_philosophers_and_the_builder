@@ -18,12 +18,12 @@ Each runtime package is self-contained and can be copied independently.
 - Every loaded agent prompt must include the global agent preamble from `agents/global.md`.
 - Every formal handoff must explicitly set `[changelog].repo_changed` to `true` or `false`.
 - Pure analysis that does not touch the repository may set `repo_changed = false` and does not require a changelog entry.
-- Any repository-changing step must update `CHANGELOG.md` or mark the changelog hash as pending in the handoff.
-- Changelog-only maintenance commits that replace `PENDING` with a known commit or merge hash do not require their own changelog entry.
+- Meaningful repository changes must update `CHANGELOG.md`.
+- Changelog-only edits are bookkeeping and do not need their own changelog entry or their own PR, merge, or commit hash.
 - Plato must create or update a PRD Markdown file before Aristotle designs architecture.
 - The PRD path must be linked from `[markdown_links].prd` in the TOML handoff.
 - Every meaningful repository change must be recorded in `CHANGELOG.md`, including repository-level changes, not just source-code changes.
-- Changelog entries must include date/time, summary, scope, and commit or merge hash.
+- Changelog entries for meaningful changes must include date/time, summary, scope, and a known commit hash for the meaningful change.
 - Do not batch task slices.
 - Do not batch patches.
 - Do not move to the next task or patch before documentation is updated.
@@ -111,7 +111,7 @@ This global preamble is the system-wide control surface for rules that every age
 repo_changed = false
 ```
 
-Pure analysis sets `repo_changed = false`. A step that changes the repository sets `repo_changed = true`, updates `CHANGELOG.md`, and records date/time, scope, summary, and either a commit or merge hash or `pending_hash = true`.
+Pure analysis sets `repo_changed = false`. A step that changes the repository sets `repo_changed = true`, updates `CHANGELOG.md`, and records date/time, scope, summary, and a known commit hash for the meaningful change. Changelog-only bookkeeping edits are exempt from recursive changelog entries.
 
 This is not a Builder-only rule. It applies to Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, Builder, patching, proof work, documentation work, workflow changes, metadata changes, templates, and verifier changes.
 
@@ -182,20 +182,20 @@ Every meaningful repository change must be recorded there, including:
 - repository layout changes
 - maintenance-policy changes
 
-Each changelog entry must include:
+Each changelog entry for a meaningful change must include:
 
 - date and time
 - scope
 - summary
-- commit or merge hash
+- known commit hash for the meaningful change
 
-A commit cannot know its own final hash before it is created. If needed, a later changelog-maintenance commit may replace a `PENDING` marker with the known commit or merge hash. That changelog-only maintenance commit is not itself a meaningful repository change for changelog-entry purposes and does not require a new changelog entry.
+Changelog-only edits are bookkeeping. They do not need their own changelog entry and do not need to reference their own PR, merge, or commit hash.
 
 The CI changelog policy verifier enforces this distinction:
 
 - pull requests with meaningful repository changes must include `CHANGELOG.md`
-- normal pull requests may use `PENDING` when the final merge hash is unknowable
-- changelog-only maintenance pull requests may only replace `PENDING` with a 40-character hash
+- changelog entries must use known 40-character commit hashes, not `PENDING`
+- changelog-only pull requests are allowed without a new changelog entry or hash
 
 ## Builder Feature Branch Workflow
 
@@ -449,7 +449,7 @@ Run the changelog policy verifier before treating changelog-rule changes as done
 python tools\verify_changelog_policy.py
 ```
 
-The changelog policy verifier uses Git history in CI to distinguish meaningful repository changes from changelog-only hash finalization. The GitHub Actions package workflow fetches full history so this diff check can compare pull requests against `main`.
+The changelog policy verifier uses Git history in CI to distinguish meaningful repository changes from changelog-only bookkeeping. The GitHub Actions package workflow fetches full history so this diff check can compare pull requests against `main`.
 
 A GitHub Actions workflow runs both verifiers on push and pull request against `main`.
 
@@ -469,7 +469,7 @@ The three runtime packages are intentionally self-contained. When changing behav
 
 Also update `CHANGELOG.md` for meaningful repository changes. This includes repo-level changes such as documentation, CI workflows, package metadata, proof models, verification scripts, templates, licensing, repository layout, and maintenance policy changes.
 
-Changelog-only maintenance commits that replace a `PENDING` marker with a known commit or merge hash are bookkeeping cleanup and do not require another changelog entry.
+Changelog-only edits are bookkeeping cleanup. They do not require another changelog entry and do not need to reference their own PR, merge, or commit hash.
 
 ## License
 
