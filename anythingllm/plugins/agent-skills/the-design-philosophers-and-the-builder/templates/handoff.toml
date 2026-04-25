@@ -90,6 +90,18 @@ items = []
 items = []
 blocking = false
 
+[changelog]
+repo_changed = false
+required = false
+updated = false
+date_time = ""
+scope = ""
+summary = ""
+commit_or_merge_hash = ""
+pending_hash = false
+path = "CHANGELOG.md"
+reason = ""
+
 [markdown_links]
 prd = []
 reports = []
