@@ -138,6 +138,52 @@ This is not a Builder-only rule. It applies to Socrates, Plato, Aristotle, Bacon
 19. Epictetus verifies resilience.
 20. The parent admits only if the state machine held.
 
+## Real-Life Namesakes
+
+The agent names are borrowed from real philosophers and computer scientists. The workflow roles are software-specific, but the names were chosen because each figure stands for a recognizable intellectual discipline.
+
+### Socrates
+
+Socrates stood for questioning, moral inquiry, and intellectual humility. He did not write books; most of what is known about him comes through Plato, Xenophon, Aristophanes, and later tradition. His method used sharp questions to expose contradictions in people's beliefs, especially around virtue, justice, courage, wisdom, and how a person should live.
+
+Core idea: the unexamined life is not worth living.
+
+### Plato
+
+Plato stood for ideal forms, reason, philosophical education, and ordered society. He argued that the visible world is changeable and imperfect, while true knowledge concerns eternal Forms or ideals such as Justice, Beauty, and Goodness. He founded the Academy in Athens and wrote dialogues, many featuring Socrates.
+
+Core idea: the world we see is a shadow of deeper ideal realities.
+
+### Aristotle
+
+Aristotle stood for logic, observation, classification, causality, ethics, politics, biology, and practical philosophy. He was Plato's student but was more grounded in studying the actual world. He developed formal logic, classified living things, analyzed causes, wrote about virtue ethics, and treated humans as political and rational animals.
+
+Core idea: understand things by studying their nature, causes, purposes, and actual behavior.
+
+### Francis Bacon
+
+Francis Bacon stood for empiricism, scientific method, experiment, and organized inquiry. He criticized reliance on old authorities and abstract speculation. He pushed for knowledge built through observation, experiment, induction, and systematic collection of evidence.
+
+Core idea: knowledge should be built from disciplined observation and experiment.
+
+### C. A. R. Hoare
+
+Tony Hoare is a computer scientist, not a traditional philosopher, though his work has philosophical weight in formal reasoning about programs. He is known for Quicksort, Hoare logic, communicating sequential processes, and program correctness. Hoare logic gives a way to reason about what must be true before and after a program runs.
+
+Core idea: software should be reasoned about with precise logical contracts.
+
+### Epictetus
+
+Epictetus stood for Stoicism, self-command, discipline, and freedom through control of judgment. He was born enslaved, later became free, and taught that people should distinguish what is under their control from what is not. A person's opinions, choices, desires, and actions are theirs; reputation, wealth, other people, and events are not fully theirs.
+
+Core idea: control your judgments and actions; do not be ruled by what you cannot control.
+
+### Diogenes
+
+Diogenes stood for Cynicism, radical simplicity, contempt for hypocrisy, and living according to nature. He rejected social status, luxury, convention, and polite nonsense. He used shock, mockery, and extreme simplicity to expose artificial values.
+
+Core idea: strip life down to what is real; expose bullshit by living without pretense.
+
 ## Plato PRD Markdown Output
 
 Plato owns the PRD-level product artifact for the bounded problem Socrates handed forward.
