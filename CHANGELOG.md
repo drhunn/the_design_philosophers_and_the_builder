@@ -25,6 +25,8 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
+| 2026-04-25 06:18:33 -05:00 | Verification | Updated package verifier to require a repository changelog with date/time, summary, scope, and commit/merge hash entries. | `f606c07370730760427138ea836fba95e742ca44` |
+| 2026-04-25 06:17:21 -05:00 | Repository docs | Added `CHANGELOG.md` and documented that repository-level changes, not only source-code changes, must be recorded. | `417aea553798fc569a063ac007985f5b6062ea90` |
 | 2026-04-25 06:15:09 -05:00 | Repository docs | Documented Plato PRD workflow, including PRD handoff rules and verifier coverage. | `4a25e1a5e922e230f6f200f0160c7d7ca46a1189` |
 | 2026-04-25 06:14:00 -05:00 | Package metadata | Updated AnythingLLM plugin metadata for Plato PRD Markdown output and PRD handoff links. | `d3ca102c4907fb38f5a6776e6ec65a4828a00634` |
 | 2026-04-25 06:13:00 -05:00 | Package docs | Documented the AnythingLLM PRD template and Plato PRD output rule. | `90e4d4c49977b23c348a9242e52bf9c5cb58b1d0` |
