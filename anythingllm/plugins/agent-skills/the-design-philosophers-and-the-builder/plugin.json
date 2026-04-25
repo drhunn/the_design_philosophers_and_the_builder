@@ -3,8 +3,8 @@
   "hubId": "the-design-philosophers-and-the-builder",
   "name": "The Design Philosophers and the Builder",
   "schema": "skill-1.0.0",
-  "version": "0.1.0",
-  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, TOML handoffs, and smallest-safe-slice implementation planning.",
+  "version": "0.1.1",
+  "description": "Routes software design work through a bounded Mealy-style workflow using Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, and Builder 1986. Use for software designed from scratch, scope-drift control, TOML handoffs, collision-free Feature Branch Workflow, flat Git worktrees, one-task-at-a-time worktree slicing, and one-patch-at-a-time patch discipline.",
   "author": "@drhunn",
   "author_url": "https://github.com/drhunn/the_design_philosophers_and_the_builder",
   "entrypoint": {
@@ -15,15 +15,15 @@
         "type": "string"
       },
       "state": {
-        "description": "Current state, for example S1_PROBLEM_EXAMINATION. Required for available_events and dispatch.",
+        "description": "Current state, for example S6C_BUILDER_TASK_SLICE_PLANNING. Required for available_events and dispatch.",
         "type": "string"
       },
       "event": {
-        "description": "Event to dispatch, for example problem_is_clear. Required for dispatch.",
+        "description": "Event to dispatch, for example task_slice_complete or patch_task_complete. Required for dispatch.",
         "type": "string"
       },
       "context_json": {
-        "description": "Optional JSON object of guard flags, for example {\"build_package_complete\":true}.",
+        "description": "Optional JSON object of guard flags, for example {\"task_documentation_updated\":true,\"patch_task_documentation_updated\":true}.",
         "type": "string"
       },
       "user_input": {
@@ -31,7 +31,7 @@
         "type": "string"
       },
       "artifact_toml": {
-        "description": "Optional current TOML handoff artifact or summary used for context by the calling agent.",
+        "description": "Optional current TOML handoff artifact containing git, task, patch, validation, documentation, and remaining_work sections.",
         "type": "string"
       }
     }
@@ -42,8 +42,12 @@
       "call": "{\"operation\":\"dispatch\",\"state\":\"S0_INTAKE\",\"event\":\"new_request\"}"
     },
     {
-      "prompt": "What events are legal from Plato's scoped ideal state?",
-      "call": "{\"operation\":\"available_events\",\"state\":\"S1A_SCOPED_IDEAL_MODEL\"}"
+      "prompt": "What events are legal from task-slice planning?",
+      "call": "{\"operation\":\"available_events\",\"state\":\"S6C_BUILDER_TASK_SLICE_PLANNING\"}"
+    },
+    {
+      "prompt": "Show the Builder constraints for flat worktrees and one-patch-at-a-time patching.",
+      "call": "{\"operation\":\"builder_constraint\"}"
     },
     {
       "prompt": "Give me the formal handoff template.",
