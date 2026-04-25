@@ -4,30 +4,33 @@ All meaningful repository changes must be recorded here, not just source-code ch
 
 Repository-level changes include documentation, workflow files, package metadata, proof models, verification scripts, templates, licensing, repository layout, generated artifacts, and maintenance policy changes.
 
-Changelog-only maintenance commits that replace `PENDING` with a known commit or merge hash do not require their own changelog entry.
+Changelog-only edits are bookkeeping. They do not need their own changelog entry and do not need to reference their own PR, merge, or commit hash.
 
 ## Entry Format
 
-Each entry must contain:
+Each entry for a meaningful repository change must contain:
 
 - date and time
 - summary
-- commit or merge hash
+- commit hash for the meaningful change
 - scope
 
 Use America/Chicago time unless a release process explicitly switches the repository to UTC.
 
 ```text
-YYYY-MM-DD HH:MM:SS -05:00 | Scope | Summary | Commit/Merge Hash
+YYYY-MM-DD HH:MM:SS -05:00 | Scope | Summary | Commit Hash
 ```
 
-For pull-request workflows, use the merge commit hash when available. For direct commits, use the direct commit hash. A future entry may fill in the hash for a previous changelog-maintenance commit; a commit cannot know its own final hash before it is created. Changelog-only maintenance commits that replace a pending marker with the known hash are not recursively logged.
+For pull-request workflows, use the commit hash for the meaningful change being recorded. Do not use `PENDING`. Changelog-only bookkeeping edits are not recursively logged.
 
 ## 2026-04-25
 
-| Date & Time | Scope | Summary | Commit/Merge Hash |
+| Date & Time | Scope | Summary | Commit Hash |
 |---|---|---|---|
-| 2026-04-25 11:25:00 -05:00 | Verification | Added a CI changelog policy verifier to distinguish meaningful repository changes from changelog-only hash finalization and prevent recursive changelog loops. | `PENDING` |
+| 2026-04-25 11:50:00 -05:00 | Repository docs | Added a README section explaining the real-life namesakes behind Socrates, Plato, Aristotle, Francis Bacon, C. A. R. Hoare, Epictetus, and Diogenes. | `729700aa8394b5fb5441ee9d05b0fa83ea2a5ad6` |
+| 2026-04-25 11:40:00 -05:00 | Verification | Refined the changelog policy verifier so changelog-only edits are exempt bookkeeping while meaningful repository changes still require changelog coverage with known hashes. | `42eb6bad08ec999f2d8a0f7bfdd40652cfd376ad` |
+| 2026-04-25 11:41:00 -05:00 | Repository docs | Updated the root README to state that changelog-only edits do not need their own changelog entry or their own PR, merge, or commit hash. | `fc47c97a91e16b2a490667a43bc38c94db42b7c0` |
+| 2026-04-25 11:25:00 -05:00 | Verification | Added a CI changelog policy verifier to distinguish meaningful repository changes from changelog-only hash finalization and prevent recursive changelog loops. | `46bae4bd821aaa3a6695e081b983b6cb2e37a87c` |
 | 2026-04-25 11:10:00 -05:00 | Repository docs | Documented the changelog-only maintenance exception to prevent recursive changelog loops. | `6241976d259976473c6c7b89a1be631ff0b824f7` |
 | 2026-04-25 10:55:00 -05:00 | Verification | Added package README continuity checks so dispatcher, fixed-action loading, handoff template, and PRD template documentation cannot silently drift again. | `42dcc82580ba0c14a0a72caf29bab86f37ebcdef` |
 | 2026-04-25 10:45:00 -05:00 | Package docs | Updated Codex and Claude package READMEs to document full package contents, dispatcher loader behavior, and PRD/changelog handoff artifacts. | `d4f394a7e9df201d3b127c01811e061f7a33ff60` |
@@ -91,7 +94,7 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 ## 2026-04-24
 
-| Date & Time | Scope | Summary | Commit/Merge Hash |
+| Date & Time | Scope | Summary | Commit Hash |
 |---|---|---|---|
 | 2026-04-24 22:08:22 -05:00 | Lean proof project | Added Lake manifest for Lean proofs. | `7f7e72e50e3f60ec0614a26a6f47b3d40895fc62` |
 | 2026-04-24 21:55:53 -05:00 | Repository docs | Documented Lean proof checks. | `06f8a4c60cc30bca52b73f70bceade3152fa0d1e` |
