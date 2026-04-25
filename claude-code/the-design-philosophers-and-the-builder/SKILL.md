@@ -24,6 +24,10 @@ or project-local:
 
 `<repo>\.claude\skills\the-design-philosophers-and-the-builder\`
 
+## Runtime Requirements
+
+The Markdown agents and TOML templates are plain text. Running `scripts/state_machine.py` directly requires Python 3.11 or newer because it uses the standard-library `tomllib` module.
+
 ## Bundled Files
 
 - `agents/README.md`
