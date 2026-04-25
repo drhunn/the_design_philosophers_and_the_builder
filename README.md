@@ -263,6 +263,41 @@ S12_ADMISSION_DECISION
 S13_ACCEPTED
 ```
 
+## Action Dispatcher Loader
+
+The state machine emits action names such as `run_socrates`, `run_hoare_prebuild`, and `run_builder_task_slice_planning`. The dispatcher/loader maps those fixed action names to bundled agent Markdown files.
+
+Codex and Claude packages include:
+
+```text
+scripts/dispatcher.py
+```
+
+AnythingLLM exposes equivalent operations in `handler.js`:
+
+```text
+resolve_actions
+load_actions
+dispatch_and_load
+```
+
+The loader uses a fixed action-to-file map. It does not accept arbitrary file paths from user input.
+
+Examples:
+
+```text
+run_socrates -> agents/socrates.md
+run_plato -> agents/plato.md
+run_aristotle -> agents/aristotle.md
+run_bacon_prebuild -> agents/bacon.md
+run_hoare_prebuild -> agents/hoare.md
+run_epictetus_prebuild -> agents/epictetus.md
+run_diogenes_prebuild -> agents/diogenes.md
+run_builder_task_slice_planning -> agents/builder-1986.md
+```
+
+Controller actions such as `check_build_package`, `make_admission_decision`, `accept_feature`, and `require_postmortem` intentionally do not load agent files.
+
 ## Lean Proof Checks
 
 The repository includes a Lean 4 proof project under:
@@ -315,7 +350,7 @@ Run the package verifier before treating a package change as done:
 python tools\verify_packages.py
 ```
 
-The verifier checks required files, package-local MIT licenses, YAML front matter, TOML templates with proof-carrying sections, Python state-machine happy paths with task and patch loops, AnythingLLM handler syntax when Node.js is available, AnythingLLM plugin metadata, and Builder workflow drift markers.
+The verifier checks required files, package-local MIT licenses, YAML front matter, TOML templates with proof-carrying sections, Python state-machine happy paths with task and patch loops, Python dispatcher loaders, AnythingLLM handler syntax and loader behavior when Node.js is available, AnythingLLM plugin metadata, and Builder workflow drift markers.
 
 A GitHub Actions workflow also runs the verifier on push and pull request against `main`.
 
