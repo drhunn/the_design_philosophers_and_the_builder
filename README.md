@@ -263,6 +263,38 @@ S12_ADMISSION_DECISION
 S13_ACCEPTED
 ```
 
+## Lean Proof Checks
+
+The repository includes a Lean 4 proof project under:
+
+```text
+proofs/lean/
+```
+
+The current proof model is:
+
+```text
+proofs/lean/TheDesignPhilosophers/StateMachine.lean
+```
+
+It proves selected correctness properties of the finite state-machine model:
+
+- the happy path reaches `S13_ACCEPTED`
+- `S13_ACCEPTED` is terminal
+- task completion requires task documentation
+- patch completion requires patch documentation
+- invalid direct patch completion from patch planning is rejected
+- selected invalid events are rejected
+
+The Lean proof checks the formal model. It does not prove Python runtime behavior, JavaScript runtime behavior, TOML parser behavior, GitHub behavior, filesystem behavior, or AnythingLLM behavior. A future conformance bridge should generate the Lean model from the implementation or generate implementation tests from the Lean model.
+
+GitHub Actions runs the Lean proof workflow on push and pull request. To run it locally, install Lean/Lake and run:
+
+```powershell
+cd proofs\lean
+lake build
+```
+
 ## Artifact Rule
 
 Formal handoff artifacts are TOML.
@@ -293,6 +325,7 @@ A GitHub Actions workflow also runs the verifier on push and pull request agains
 codex-desktop/        canonical Codex Desktop package
 claude-code/          canonical Claude Code package
 anythingllm/          canonical AnythingLLM package
+proofs/               Lean proof models and proof-checking project
 tools/                package verification and maintenance tools
 ```
 
