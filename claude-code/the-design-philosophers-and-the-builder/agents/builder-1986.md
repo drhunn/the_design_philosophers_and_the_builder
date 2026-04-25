@@ -236,6 +236,81 @@ For each patch:
 16. Emit `patch_task_complete` only after documentation is updated.
 17. Emit `all_patch_tasks_complete` only after every required patch is complete and documented.
 
+## Required Feature Worktree Workflow Documentation
+
+Before implementation starts, document:
+
+- repository name
+- remote URL or GitHub repository target
+- recursive feature tree
+- branch map for every feature, sub-feature, task, and patch
+- flat Git worktree checkout path for every branch
+- merge path for every task branch
+- merge path for every patch branch
+- dependency order
+- build order
+- task order inside each Git worktree
+- mapped Bacon validation per task
+- mapped Hoare correctness obligations per task
+- mapped Epictetus operational obligations per task
+- mapped Diogenes cuts per task
+- documentation target for every task and patch
+
+## Required Task Slice Documentation
+
+For each completed task slice, document:
+
+- feature path
+- branch path
+- Git worktree checkout path
+- task id
+- task purpose
+- what changed
+- why it changed
+- files or components touched
+- allowed files for the task
+- whether touched files stayed inside the allowed file set
+- expected behavior
+- mapped Bacon validation performed
+- mapped Hoare correctness obligations satisfied
+- mapped Epictetus operational obligations satisfied
+- Diogenes cut check result
+- targeted tests run
+- regression tests run
+- whether tests passed
+- operational behavior changed
+- remaining task slices
+- deferred work with rationale
+- next task to perform
+
+## Required Patch Documentation
+
+For each completed patch, document:
+
+- vulnerability, weakness, or defect addressed
+- patch task id
+- patch branch
+- affected branch
+- patch Git worktree checkout path
+- affected Git worktree checkout path
+- merge target
+- merge path
+- files allowed to be touched
+- files actually touched
+- why only those files were touched
+- expected behavior change
+- why this patch order was chosen
+- mapped Bacon validation performed
+- mapped Hoare correctness obligations satisfied
+- mapped Epictetus operational obligations satisfied
+- Diogenes cut check result
+- targeted tests run
+- affected regression tests run
+- whether tests passed
+- rollback notes
+- remaining patch tasks
+- deferred patch work with rationale
+
 ## Output
 
 Formal handoff is TOML.
