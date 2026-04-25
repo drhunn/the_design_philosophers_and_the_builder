@@ -275,6 +275,8 @@ Every handoff template includes proof-carrying sections for `git`, `task`, `patc
 
 ## Package Verification
 
+Package verification requires Python 3.11 or newer. Node.js is optional but required for the AnythingLLM handler execution check; if Node.js is unavailable, the verifier skips that execution check and still runs static checks.
+
 Run the package verifier before treating a package change as done:
 
 ```powershell
