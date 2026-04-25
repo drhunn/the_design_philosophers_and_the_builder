@@ -20,6 +20,7 @@ ANYTHING = ROOT / "anythingllm" / "plugins" / "agent-skills" / "the-design-philo
 
 AGENTS = ["README.md", "socrates.md", "plato.md", "aristotle.md", "bacon.md", "hoare.md", "epictetus.md", "diogenes.md", "builder-1986.md"]
 LICENSE_MARKERS = ["MIT License", "Copyright (c) 2026 Danny Hunn", "THE SOFTWARE IS PROVIDED \"AS IS\""]
+CHANGELOG_MARKERS = ["# Changelog", "All meaningful repository changes must be recorded here", "date and time", "summary", "commit or merge hash", "Repository-level changes include", "Commit/Merge Hash"]
 HANDOFF_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "markdown_links"]
 BUILDER_MARKERS = ["Feature Branch Workflow", "Git cannot safely hold both `feature/foo` and `feature/foo/bar` as branches", "Do not nest Git worktrees inside other Git worktrees", "subfeature/<feature-slug>--<sub-feature-path-slug>", "patch/<feature-slug>--<sub-feature-path-slug>--<patch-id>", "patch branch merges into its affected task branch, sub-feature branch, or feature branch", "Builder must not batch patches", "Required Feature Worktree Workflow Documentation", "Required Task Slice Documentation", "Required Patch Documentation"]
 PLATO_MARKERS = ["Plato owns the PRD-level product artifact", "Create a PRD as a Markdown file", "templates/prd.md", "[markdown_links]", "prd = [\"docs/product/prd.md\"]"]
@@ -155,6 +156,18 @@ def contains(errors: list[str], path: Path, markers: list[str]) -> None:
             add(errors, f"{rel(path)} missing marker: {marker}")
 
 
+def check_changelog(errors: list[str]) -> None:
+    path = ROOT / "CHANGELOG.md"
+    contains(errors, path, CHANGELOG_MARKERS)
+    if not path.is_file():
+        return
+    text = path.read_text(encoding="utf-8")
+    if not re.search(r"\|\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+-\d{2}:\d{2}\s*\|", text):
+        add(errors, "CHANGELOG.md has no entry with required date/time format")
+    if not re.search(r"`[0-9a-f]{40}`", text):
+        add(errors, "CHANGELOG.md has no 40-character commit or merge hash")
+
+
 def check_front_matter(errors: list[str], path: Path) -> None:
     require_file(errors, path)
     if not path.is_file():
@@ -267,6 +280,7 @@ def check_anything(errors: list[str]) -> None:
 def main() -> int:
     errors: list[str] = []
     contains(errors, ROOT / "LICENSE", LICENSE_MARKERS)
+    check_changelog(errors)
     check_package(errors, CODEX, skill=True)
     check_package(errors, CLAUDE, skill=True)
     check_anything(errors)
