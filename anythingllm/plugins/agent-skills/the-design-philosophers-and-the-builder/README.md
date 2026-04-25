@@ -4,7 +4,7 @@
 
 This AnythingLLM custom agent skill exposes the Design Philosophers workflow as a callable tool.
 
-Use it when designing software from scratch, controlling scope drift, routing user changes, producing TOML handoffs, validating proof-carrying transitions, requiring Plato to create a PRD Markdown file before Aristotle designs architecture, resolving state-machine actions to bundled agent files, loading the correct agent prompt, or enforcing smallest-safe-slice implementation.
+Use it when designing software from scratch, controlling scope drift, routing user changes, producing TOML handoffs, validating proof-carrying transitions, requiring every handoff to explicitly decide whether the repository changed, requiring Plato to create a PRD Markdown file before Aristotle designs architecture, resolving state-machine actions to bundled agent files, loading the correct agent prompt with global rules prepended, or enforcing smallest-safe-slice implementation.
 
 ## Self-Contained Package
 
@@ -14,8 +14,10 @@ Required local files:
 
 - `plugin.json`
 - `handler.js`
+- `handler-with-global.js`
 - `README.md`
 - `agents/README.md`
+- `agents/global.md`
 - `agents/socrates.md`
 - `agents/plato.md`
 - `agents/aristotle.md`
@@ -27,7 +29,7 @@ Required local files:
 - `templates/handoff.toml`
 - `templates/prd.md`
 
-The state machine and fixed action dispatcher are embedded directly in `handler.js`.
+The state machine and base fixed action dispatcher are embedded directly in `handler.js`. The plugin entrypoint is `handler-with-global.js`, which delegates to `handler.js` but overrides action loading so `agents/global.md` is prepended to every loaded agent prompt.
 
 ## Install
 
@@ -52,6 +54,14 @@ The handler supports these operations:
 - `validate_handoff`
 - `routing_guidance`
 - `builder_constraint`
+
+## Global Agent Preamble
+
+`agents/global.md` applies to every loaded agent prompt.
+
+The wrapper entrypoint prepends `agents/global.md` to agent content returned by `load_actions` and `dispatch_and_load`.
+
+The global preamble requires every handoff to explicitly set `[changelog].repo_changed` to `true` or `false`. Pure analysis that does not touch the repository may set `repo_changed = false`. Any repository-changing step must update `CHANGELOG.md` and include changelog evidence or mark the hash pending.
 
 ## Plato PRD Markdown Output
 
@@ -80,16 +90,16 @@ prd = ["docs/product/prd.md"]
 
 The state machine emits action names such as `run_socrates`, `run_hoare_prebuild`, and `run_builder_task_slice_planning`.
 
-The dispatcher maps those fixed action names to bundled agent Markdown files:
+The dispatcher maps those fixed action names to bundled agent Markdown files and prepends `agents/global.md`:
 
-- `run_socrates` -> `agents/socrates.md`
-- `run_plato` -> `agents/plato.md`
-- `run_aristotle` -> `agents/aristotle.md`
-- `run_bacon_prebuild` -> `agents/bacon.md`
-- `run_hoare_prebuild` -> `agents/hoare.md`
-- `run_epictetus_prebuild` -> `agents/epictetus.md`
-- `run_diogenes_prebuild` -> `agents/diogenes.md`
-- `run_builder_task_slice_planning` -> `agents/builder-1986.md`
+- `run_socrates` -> `agents/global.md` + `agents/socrates.md`
+- `run_plato` -> `agents/global.md` + `agents/plato.md`
+- `run_aristotle` -> `agents/global.md` + `agents/aristotle.md`
+- `run_bacon_prebuild` -> `agents/global.md` + `agents/bacon.md`
+- `run_hoare_prebuild` -> `agents/global.md` + `agents/hoare.md`
+- `run_epictetus_prebuild` -> `agents/global.md` + `agents/epictetus.md`
+- `run_diogenes_prebuild` -> `agents/global.md` + `agents/diogenes.md`
+- `run_builder_task_slice_planning` -> `agents/global.md` + `agents/builder-1986.md`
 
 Controller actions such as `check_build_package`, `make_admission_decision`, `accept_feature`, and `require_postmortem` do not load agent files.
 
@@ -171,10 +181,12 @@ Markdown is for linked long-form prose.
 
 The state machine consumes TOML, not Markdown.
 
+Every handoff must include `[changelog]` and explicitly set `repo_changed` to `true` or `false`.
+
 ## Builder Constraint
 
 Builder is not allowed to build the whole design as a lump.
 
 Builder must slice it, cost it, order it, and implement incrementally.
 
-A slice is done only when it satisfies mapped validation, correctness, operational obligations, and documentation requirements.
+A slice is done only when it satisfies mapped validation, correctness, operational obligations, documentation requirements, and the changelog decision rule.
