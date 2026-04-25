@@ -6,12 +6,11 @@ import re
 import subprocess
 import sys
 import tempfile
+import tomllib
 from pathlib import Path
 
-try:
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
-    import tomli as tomllib
+if sys.version_info < (3, 11):
+    raise SystemExit("Python 3.11 or newer is required. This verifier uses the standard-library tomllib module.")
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -65,6 +64,9 @@ BUILDER_REQUIRED_MARKERS = [
     "Builder must not batch patches",
     "Emit `task_slice_complete` only after documentation is updated",
     "Emit `patch_task_complete` only after documentation is updated",
+    "Required Feature Worktree Workflow Documentation",
+    "Required Task Slice Documentation",
+    "Required Patch Documentation",
 ]
 
 STATE_MACHINE_MARKERS = [
@@ -79,9 +81,12 @@ STATE_MACHINE_MARKERS = [
     "patch_plan_complete",
     "patch_task_complete",
     "patch_task_documentation_updated",
+    "PROOF_GUARDS",
+    "validate_handoff_for_guard",
 ]
 
 PY_HAPPY_PATH_SNIPPET = """
+import copy
 import importlib.util
 import sys
 from pathlib import Path
@@ -98,6 +103,30 @@ for event in mod.happy_path():
 assert m.state == mod.S13, m.state
 for required in ['task_slice_complete', 'patch_task_complete', 'patch_plan_complete']:
     assert required in visited, f'missing loop event: {required}'
+try:
+    mod.Machine(state=mod.S7, context={}).dispatch('task_slice_complete')
+    raise AssertionError('task_slice_complete without handoff should fail')
+except ValueError as exc:
+    assert 'required proof handoff missing' in str(exc)
+bad = copy.deepcopy(mod.valid_handoff())
+bad['documentation']['task_documentation_updated'] = False
+try:
+    mod.Machine(state=mod.S7, context={'handoff': bad}).dispatch('task_slice_complete')
+    raise AssertionError('task_slice_complete without task docs should fail')
+except ValueError as exc:
+    assert 'task_documentation_updated' in str(exc)
+bad_patch = copy.deepcopy(mod.valid_handoff())
+bad_patch['documentation']['patch_documentation_updated'] = False
+try:
+    mod.Machine(state=mod.S7D, context={'handoff': bad_patch}).dispatch('patch_task_complete')
+    raise AssertionError('patch_task_complete without patch docs should fail')
+except ValueError as exc:
+    assert 'patch_documentation_updated' in str(exc)
+try:
+    mod.Machine(state=mod.S7B, context=mod.happy_context()).dispatch('all_patch_tasks_complete')
+    raise AssertionError('invalid transition should fail')
+except ValueError as exc:
+    assert 'invalid event' in str(exc)
 print('ok')
 """
 
@@ -121,6 +150,11 @@ const plugin = require(process.argv[2]);
   for (const event of ['task_slice_complete', 'patch_task_complete', 'patch_plan_complete']) {
     if (!happy.events.includes(event)) throw new Error(`happy path missing event: ${event}`);
   }
+  const invalidGuard = JSON.parse(await runtime.handler.call({}, {operation: 'dispatch', state: 'S7_TASK_SLICE_IMPLEMENTATION', event: 'task_slice_complete'}));
+  if (invalidGuard.ok || !String(invalidGuard.error).includes('Required proof handoff missing')) throw new Error('missing proof handoff did not fail');
+  const badHandoff = await runtime.handler.call({}, {operation: 'handoff_template'});
+  const validation = JSON.parse(await runtime.handler.call({}, {operation: 'validate_handoff', artifact_toml: badHandoff, guard: 'task_documentation_updated'}));
+  if (validation.ok !== false || validation.errors.length === 0) throw new Error('bad handoff should fail validation');
   console.log('ok');
 })();
 """
@@ -208,7 +242,7 @@ def check_node_handler(errors: list[str], path: Path) -> None:
     require_file(errors, path)
     if not path.is_file():
         return
-    check_contains(errors, path, STATE_MACHINE_MARKERS)
+    check_contains(errors, path, STATE_MACHINE_MARKERS + ["validate_handoff"])
     node = "node.exe" if os.name == "nt" else "node"
     try:
         subprocess.run([node, "--version"], text=True, capture_output=True, check=True)
@@ -256,6 +290,9 @@ def check_anythingllm(errors: list[str]) -> None:
             for marker in ["flat Git worktrees", "one-task-at-a-time", "one-patch-at-a-time"]:
                 if marker not in description:
                     fail(errors, f"AnythingLLM plugin description missing marker: {marker}")
+            operation_description = plugin.get("entrypoint", {}).get("params", {}).get("operation", {}).get("description", "")
+            if "validate_handoff" not in operation_description:
+                fail(errors, "AnythingLLM plugin operation description missing validate_handoff")
             if plugin.get("entrypoint", {}).get("file") != "handler.js":
                 fail(errors, "AnythingLLM plugin entrypoint.file must be handler.js")
             if plugin.get("hubId") != "the-design-philosophers-and-the-builder":
