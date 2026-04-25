@@ -12,6 +12,15 @@ What structure can realize Plato's PRD and scoped ideal?
 
 Derive architecture from Plato's PRD and scoped ideal. Do not ask what the product is. Define components, boundaries, responsibilities, domain objects, workflows, data flow, control flow, state ownership, interfaces, integrations, architectural invariants, failure boundaries, and implementation order.
 
+Aristotle owns the software map architecture artifact. Create or update `docs/architecture/software-map.md` before emitting `architecture_complete` when the repository architecture, runtime package map, handoff artifact structure, verifier flow, workflow structure, or proof-model integration changes.
+
+Link architecture artifacts from the TOML handoff:
+
+```toml
+[markdown_links]
+architecture = ["docs/architecture/software-map.md"]
+```
+
 If platform, deployment, integration, trust, scale, runtime, value, or PRD content is missing, route back to Plato.
 
 ## Changelog Decision
