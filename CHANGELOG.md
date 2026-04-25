@@ -25,6 +25,7 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
+| 2026-04-25 10:45:00 -05:00 | Package docs | Updated Codex and Claude package READMEs to document full package contents, dispatcher loader behavior, and PRD/changelog handoff artifacts. | `PENDING` |
 | 2026-04-25 10:30:00 -05:00 | Changelog | Backfilled missing changelog entries and recorded the changelog/runtime conformance cleanup. | `14b924c33c5b9a4c3b802fc0550b0741ddc2df17` |
 | 2026-04-25 10:29:14 -05:00 | Verification | Added verifier checks for PRD guard enforcement, changelog decisions, Lean PRD markers, and runtime conformance markers. | `1c76fd148de60d4291ad99f2d63fba902b5ea017` |
 | 2026-04-25 10:25:00 -05:00 | Lean proof model | Guarded `idealModelComplete` with PRD Markdown evidence in the Lean model and added PRD guard theorems. | `7ce34c868ad9793031eabf3009c1b04140867393` |
