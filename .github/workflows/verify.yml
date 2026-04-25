@@ -25,5 +25,8 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Verify changelog policy
+        run: python tools/verify_changelog_policy.py
+
       - name: Verify packages
         run: python tools/verify_packages.py
