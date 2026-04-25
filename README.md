@@ -1,6 +1,6 @@
 # The Design Philosophers and the Builder
 
-A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, lump-build implementation, invalid Git branch refs, nested Git worktrees, loose worktree task slicing, or loose patching.
+A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, missing PRD handoff, lump-build implementation, invalid Git branch refs, nested Git worktrees, loose worktree task slicing, or loose patching.
 
 This repository packages the same workflow for three runtimes:
 
@@ -15,6 +15,8 @@ Each runtime package is self-contained and can be copied independently.
 - Do not create parent and child refs in the same Git namespace.
 - Do not nest Git worktrees inside other Git worktrees.
 - Do not code directly on `main`.
+- Plato must create or update a PRD Markdown file before Aristotle designs architecture.
+- The PRD path must be linked from `[markdown_links].prd` in the TOML handoff.
 - Do not batch task slices.
 - Do not batch patches.
 - Do not move to the next task or patch before documentation is updated.
@@ -88,8 +90,8 @@ The AnythingLLM state machine is embedded in `handler.js` so the plugin does not
 ## Agent Chain
 
 1. Socrates bounds the real problem.
-2. Plato defines the scoped ideal and hard product constraints.
-3. Aristotle derives the structure.
+2. Plato creates the PRD-level product artifact as Markdown and links it from the TOML handoff.
+3. Aristotle derives the structure from Plato's PRD.
 4. Bacon defines proof obligations.
 5. Hoare defines correctness obligations.
 6. Epictetus defines operational resilience obligations.
@@ -107,6 +109,33 @@ The AnythingLLM state machine is embedded in `handler.js` so the plugin does not
 18. Hoare verifies correctness.
 19. Epictetus verifies resilience.
 20. The parent admits only if the state machine held.
+
+## Plato PRD Markdown Output
+
+Plato owns the PRD-level product artifact for the bounded problem Socrates handed forward.
+
+Plato must create or update a PRD Markdown file before emitting `ideal_model_complete`.
+
+Normal PRD path:
+
+```text
+docs/product/prd.md
+```
+
+Package-local template:
+
+```text
+templates/prd.md
+```
+
+The PRD path must be linked from the TOML handoff:
+
+```toml
+[markdown_links]
+prd = ["docs/product/prd.md"]
+```
+
+Aristotle must derive architecture from the PRD. If PRD content is missing, ambiguous, or contradictory, Aristotle routes back to Plato instead of guessing.
 
 ## Builder Feature Branch Workflow
 
@@ -338,7 +367,7 @@ Markdown is for linked long-form prose.
 
 The state machine consumes TOML, not Markdown.
 
-Every handoff template includes proof-carrying sections for `git`, `task`, `patch`, `validation`, `documentation`, and `remaining_work`. These fields are where the active branch, flat worktree path, task id, patch id, validation evidence, documentation update flags, and remaining work inventory are recorded.
+Every handoff template includes proof-carrying sections for `git`, `task`, `patch`, `validation`, `documentation`, `remaining_work`, and `markdown_links`. These fields are where the active branch, flat worktree path, task id, patch id, validation evidence, documentation update flags, remaining work inventory, PRD link, and other Markdown artifact links are recorded.
 
 ## Package Verification
 
@@ -350,7 +379,7 @@ Run the package verifier before treating a package change as done:
 python tools\verify_packages.py
 ```
 
-The verifier checks required files, package-local MIT licenses, YAML front matter, TOML templates with proof-carrying sections, Python state-machine happy paths with task and patch loops, Python dispatcher loaders, AnythingLLM handler syntax and loader behavior when Node.js is available, AnythingLLM plugin metadata, and Builder workflow drift markers.
+The verifier checks required files, package-local MIT licenses, YAML front matter, TOML templates with proof-carrying sections, `[markdown_links].prd`, Plato PRD ownership, PRD templates, Python state-machine happy paths with task and patch loops, Python dispatcher loaders, AnythingLLM handler syntax and loader behavior when Node.js is available, AnythingLLM embedded handoff PRD links, AnythingLLM plugin metadata, and Builder workflow drift markers.
 
 A GitHub Actions workflow also runs the verifier on push and pull request against `main`.
 
