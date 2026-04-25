@@ -1,6 +1,6 @@
 # The Design Philosophers and the Builder
 
-A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, missing PRD handoff, lump-build implementation, invalid Git branch refs, nested Git worktrees, loose worktree task slicing, or loose patching.
+A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, missing PRD handoff, missing changelog traceability, lump-build implementation, invalid Git branch refs, nested Git worktrees, loose worktree task slicing, or loose patching.
 
 This repository packages the same workflow for three runtimes:
 
@@ -17,6 +17,8 @@ Each runtime package is self-contained and can be copied independently.
 - Do not code directly on `main`.
 - Plato must create or update a PRD Markdown file before Aristotle designs architecture.
 - The PRD path must be linked from `[markdown_links].prd` in the TOML handoff.
+- Every meaningful repository change must be recorded in `CHANGELOG.md`, including repository-level changes, not just source-code changes.
+- Changelog entries must include date/time, summary, scope, and commit or merge hash.
 - Do not batch task slices.
 - Do not batch patches.
 - Do not move to the next task or patch before documentation is updated.
@@ -136,6 +138,32 @@ prd = ["docs/product/prd.md"]
 ```
 
 Aristotle must derive architecture from the PRD. If PRD content is missing, ambiguous, or contradictory, Aristotle routes back to Plato instead of guessing.
+
+## Changelog Rule
+
+`CHANGELOG.md` is part of the repository control surface.
+
+Every meaningful repository change must be recorded there, including:
+
+- source-code changes
+- documentation changes
+- workflow and CI changes
+- package metadata changes
+- proof-model changes
+- verification-script changes
+- template changes
+- licensing changes
+- repository layout changes
+- maintenance-policy changes
+
+Each changelog entry must include:
+
+- date and time
+- scope
+- summary
+- commit or merge hash
+
+A commit cannot know its own final hash before it is created. If needed, the next changelog-maintenance commit may record the previous changelog commit hash.
 
 ## Builder Feature Branch Workflow
 
@@ -379,7 +407,7 @@ Run the package verifier before treating a package change as done:
 python tools\verify_packages.py
 ```
 
-The verifier checks required files, package-local MIT licenses, YAML front matter, TOML templates with proof-carrying sections, `[markdown_links].prd`, Plato PRD ownership, PRD templates, Python state-machine happy paths with task and patch loops, Python dispatcher loaders, AnythingLLM handler syntax and loader behavior when Node.js is available, AnythingLLM embedded handoff PRD links, AnythingLLM plugin metadata, and Builder workflow drift markers.
+The verifier checks required files, package-local MIT licenses, `CHANGELOG.md` format and commit hash entries, YAML front matter, TOML templates with proof-carrying sections, `[markdown_links].prd`, Plato PRD ownership, PRD templates, Python state-machine happy paths with task and patch loops, Python dispatcher loaders, AnythingLLM handler syntax and loader behavior when Node.js is available, AnythingLLM embedded handoff PRD links, AnythingLLM plugin metadata, and Builder workflow drift markers.
 
 A GitHub Actions workflow also runs the verifier on push and pull request against `main`.
 
@@ -396,6 +424,8 @@ tools/                package verification and maintenance tools
 ## Maintenance Rule
 
 The three runtime packages are intentionally self-contained. When changing behavior, update all runtime packages or run `tools/verify_packages.py` and fix drift before considering the work complete.
+
+Also update `CHANGELOG.md` for meaningful repository changes. This includes repo-level changes such as documentation, CI workflows, package metadata, proof models, verification scripts, templates, licensing, repository layout, and maintenance policy changes.
 
 ## License
 
