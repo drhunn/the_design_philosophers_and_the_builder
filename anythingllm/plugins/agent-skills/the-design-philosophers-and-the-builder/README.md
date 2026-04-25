@@ -4,7 +4,7 @@
 
 This AnythingLLM custom agent skill exposes the Design Philosophers workflow as a callable tool.
 
-Use it when designing software from scratch, controlling scope drift, routing user changes, producing TOML handoffs, validating proof-carrying transitions, resolving state-machine actions to bundled agent files, loading the correct agent prompt, or enforcing smallest-safe-slice implementation.
+Use it when designing software from scratch, controlling scope drift, routing user changes, producing TOML handoffs, validating proof-carrying transitions, requiring Plato to create a PRD Markdown file before Aristotle designs architecture, resolving state-machine actions to bundled agent files, loading the correct agent prompt, or enforcing smallest-safe-slice implementation.
 
 ## Self-Contained Package
 
@@ -25,6 +25,7 @@ Required local files:
 - `agents/diogenes.md`
 - `agents/builder-1986.md`
 - `templates/handoff.toml`
+- `templates/prd.md`
 
 The state machine and fixed action dispatcher are embedded directly in `handler.js`.
 
@@ -51,6 +52,29 @@ The handler supports these operations:
 - `validate_handoff`
 - `routing_guidance`
 - `builder_constraint`
+
+## Plato PRD Markdown Output
+
+Plato must create or update a PRD Markdown file before emitting `ideal_model_complete`.
+
+Normal PRD path:
+
+```text
+docs/product/prd.md
+```
+
+Package-local PRD template:
+
+```text
+templates/prd.md
+```
+
+The PRD path must be linked from the TOML handoff:
+
+```toml
+[markdown_links]
+prd = ["docs/product/prd.md"]
+```
 
 ## Action Dispatcher Loader
 
