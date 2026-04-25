@@ -223,7 +223,8 @@ def check_toml(errors: list[str], path: Path) -> None:
 def run_python_snippet(errors: list[str], path: Path, snippet: str, label: str) -> None:
     if not path.is_file():
         return
-    result = subprocess.run([sys.executable, "-c", snippet.format(path=str(path))], cwd=ROOT, text=True, capture_output=True)
+    code = snippet.replace("{path}", str(path))
+    result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, text=True, capture_output=True)
     if result.returncode != 0:
         add(errors, f"{label} failed {rel(path)}: {result.stderr.strip() or result.stdout.strip()}")
 
