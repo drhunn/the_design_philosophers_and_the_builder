@@ -1,6 +1,6 @@
 # The Design Philosophers and the Builder
 
-A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, missing PRD handoff, missing changelog traceability, lump-build implementation, invalid Git branch refs, nested Git worktrees, loose worktree task slicing, or loose patching.
+A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, silent repository changes, missing PRD handoff, missing changelog traceability, lump-build implementation, invalid Git branch refs, nested Git worktrees, loose worktree task slicing, or loose patching.
 
 This repository packages the same workflow for three runtimes:
 
@@ -15,6 +15,10 @@ Each runtime package is self-contained and can be copied independently.
 - Do not create parent and child refs in the same Git namespace.
 - Do not nest Git worktrees inside other Git worktrees.
 - Do not code directly on `main`.
+- Every loaded agent prompt must include the global agent preamble from `agents/global.md`.
+- Every formal handoff must explicitly set `[changelog].repo_changed` to `true` or `false`.
+- Pure analysis that does not touch the repository may set `repo_changed = false` and does not require a changelog entry.
+- Any repository-changing step must update `CHANGELOG.md` or mark the changelog hash as pending in the handoff.
 - Plato must create or update a PRD Markdown file before Aristotle designs architecture.
 - The PRD path must be linked from `[markdown_links].prd` in the TOML handoff.
 - Every meaningful repository change must be recorded in `CHANGELOG.md`, including repository-level changes, not just source-code changes.
@@ -87,7 +91,28 @@ anythingllm/plugins/agent-skills/the-design-philosophers-and-the-builder/
 
 Copy the whole folder into AnythingLLM's custom agent skills directory and enable it in AnythingLLM's agent skill settings.
 
-The AnythingLLM state machine is embedded in `handler.js` so the plugin does not depend on Python or repo-root files.
+The AnythingLLM base state machine is embedded in `handler.js`. The plugin entrypoint is `handler-with-global.js`, which delegates to `handler.js` and overrides action loading so `agents/global.md` is prepended to every loaded agent prompt.
+
+## Global Agent Preamble
+
+Each runtime package contains:
+
+```text
+agents/global.md
+```
+
+The dispatcher/loader prepends that file to every loaded agent prompt.
+
+This global preamble is the system-wide control surface for rules that every agent step must obey. It currently requires every handoff to explicitly decide whether the repository changed:
+
+```toml
+[changelog]
+repo_changed = false
+```
+
+Pure analysis sets `repo_changed = false`. A step that changes the repository sets `repo_changed = true`, updates `CHANGELOG.md`, and records date/time, scope, summary, and either a commit or merge hash or `pending_hash = true`.
+
+This is not a Builder-only rule. It applies to Socrates, Plato, Aristotle, Bacon, Hoare, Epictetus, Diogenes, Builder, patching, proof work, documentation work, workflow changes, metadata changes, templates, and verifier changes.
 
 ## Agent Chain
 
@@ -102,10 +127,10 @@ The AnythingLLM state machine is embedded in `handler.js` so the plugin does not
 9. Builder 1986 recursively identifies features and sub-features.
 10. Builder 1986 creates collision-free branches and flat Git worktree checkout folders for the Feature Branch Workflow.
 11. Builder 1986 slices each Git worktree into one task at a time.
-12. Builder 1986 implements, validates, checks, tests, and documents each task slice before starting the next task.
+12. Builder 1986 implements, validates, checks, tests, documents each task slice, and records the changelog decision before starting the next task.
 13. Builder 1986 performs a post-build security review.
 14. Builder 1986 creates a needed patch list in sensible order.
-15. Builder 1986 patches one patch-task at a time, and each patch-task must pass Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, targeted tests, affected regression tests, and documentation before the next patch starts.
+15. Builder 1986 patches one patch-task at a time, and each patch-task must pass Bacon validation, Hoare correctness, Epictetus operational checks, Diogenes cut checks, targeted tests, affected regression tests, documentation, and changelog-decision requirements before the next patch starts.
 16. Diogenes cuts excess after patching.
 17. Bacon verifies evidence.
 18. Hoare verifies correctness.
@@ -262,10 +287,11 @@ Each task must be completed in this order:
 9. Confirm Diogenes' cuts were not reintroduced.
 10. Run the mapped tests for that task.
 11. Update documentation for the completed task slice.
-12. Emit `task_slice_complete` only after documentation is updated.
-13. Start the next task only after documentation is updated.
+12. Record the changelog decision in the handoff.
+13. Emit `task_slice_complete` only after documentation and changelog decision are updated.
+14. Start the next task only after documentation and changelog decision are updated.
 
-Documentation is the last part of the task slice, not an afterthought outside the slice.
+Documentation and changelog decision are part of the task slice, not afterthoughts outside the slice.
 
 ## Builder Post-Build Patch Rule
 
@@ -287,11 +313,12 @@ After the system is built, Builder must complete this sequence before post-build
 12. Run targeted tests.
 13. Run affected regression tests.
 14. Update patch documentation.
-15. Emit `patch_task_complete` only after documentation is updated.
-16. Move to the next patch only after documentation is updated.
-17. Emit `all_patch_tasks_complete` only after every required patch is patched, validated, checked, tested, and documented.
+15. Record the changelog decision in the handoff.
+16. Emit `patch_task_complete` only after documentation and changelog decision are updated.
+17. Move to the next patch only after documentation and changelog decision are updated.
+18. Emit `all_patch_tasks_complete` only after every required patch is patched, validated, checked, tested, documented, and assigned a changelog decision.
 
-One patch means one task slice, one branch/worktree context, one validation cycle, one test cycle, and one documentation update.
+One patch means one task slice, one branch/worktree context, one validation cycle, one test cycle, one documentation update, and one changelog decision.
 
 A patch branch merges into its affected task branch, sub-feature branch, or feature branch. A patch branch must not merge directly to `main` unless the affected branch is `main` and the patch is explicitly approved as a mainline hotfix.
 
@@ -322,7 +349,7 @@ S13_ACCEPTED
 
 ## Action Dispatcher Loader
 
-The state machine emits action names such as `run_socrates`, `run_hoare_prebuild`, and `run_builder_task_slice_planning`. The dispatcher/loader maps those fixed action names to bundled agent Markdown files.
+The state machine emits action names such as `run_socrates`, `run_hoare_prebuild`, and `run_builder_task_slice_planning`. The dispatcher/loader maps those fixed action names to bundled agent Markdown files and prepends `agents/global.md` to every loaded agent prompt.
 
 Codex and Claude packages include:
 
@@ -330,7 +357,7 @@ Codex and Claude packages include:
 scripts/dispatcher.py
 ```
 
-AnythingLLM exposes equivalent operations in `handler.js`:
+AnythingLLM exposes equivalent operations through `handler-with-global.js`:
 
 ```text
 resolve_actions
@@ -343,14 +370,14 @@ The loader uses a fixed action-to-file map. It does not accept arbitrary file pa
 Examples:
 
 ```text
-run_socrates -> agents/socrates.md
-run_plato -> agents/plato.md
-run_aristotle -> agents/aristotle.md
-run_bacon_prebuild -> agents/bacon.md
-run_hoare_prebuild -> agents/hoare.md
-run_epictetus_prebuild -> agents/epictetus.md
-run_diogenes_prebuild -> agents/diogenes.md
-run_builder_task_slice_planning -> agents/builder-1986.md
+run_socrates -> agents/global.md + agents/socrates.md
+run_plato -> agents/global.md + agents/plato.md
+run_aristotle -> agents/global.md + agents/aristotle.md
+run_bacon_prebuild -> agents/global.md + agents/bacon.md
+run_hoare_prebuild -> agents/global.md + agents/hoare.md
+run_epictetus_prebuild -> agents/global.md + agents/epictetus.md
+run_diogenes_prebuild -> agents/global.md + agents/diogenes.md
+run_builder_task_slice_planning -> agents/global.md + agents/builder-1986.md
 ```
 
 Controller actions such as `check_build_package`, `make_admission_decision`, `accept_feature`, and `require_postmortem` intentionally do not load agent files.
@@ -395,7 +422,7 @@ Markdown is for linked long-form prose.
 
 The state machine consumes TOML, not Markdown.
 
-Every handoff template includes proof-carrying sections for `git`, `task`, `patch`, `validation`, `documentation`, `remaining_work`, and `markdown_links`. These fields are where the active branch, flat worktree path, task id, patch id, validation evidence, documentation update flags, remaining work inventory, PRD link, and other Markdown artifact links are recorded.
+Every handoff template includes proof-carrying sections for `git`, `task`, `patch`, `validation`, `documentation`, `remaining_work`, `changelog`, and `markdown_links`. These fields are where the active branch, flat worktree path, task id, patch id, validation evidence, documentation update flags, remaining work inventory, changelog decision, PRD link, and other Markdown artifact links are recorded.
 
 ## Package Verification
 
@@ -407,7 +434,7 @@ Run the package verifier before treating a package change as done:
 python tools\verify_packages.py
 ```
 
-The verifier checks required files, package-local MIT licenses, `CHANGELOG.md` format and commit hash entries, YAML front matter, TOML templates with proof-carrying sections, `[markdown_links].prd`, Plato PRD ownership, PRD templates, Python state-machine happy paths with task and patch loops, Python dispatcher loaders, AnythingLLM handler syntax and loader behavior when Node.js is available, AnythingLLM embedded handoff PRD links, AnythingLLM plugin metadata, and Builder workflow drift markers.
+The verifier checks required files, package-local MIT licenses, `CHANGELOG.md` format and commit hash entries, global agent preamble files, YAML front matter, TOML templates with proof-carrying sections, `[changelog].repo_changed`, `[markdown_links].prd`, Plato PRD ownership, PRD templates, Python state-machine happy paths with task and patch loops, Python dispatcher global preamble loading, AnythingLLM wrapper handler global preamble loading when Node.js is available, AnythingLLM embedded handoff PRD/changelog links, AnythingLLM plugin metadata, and Builder workflow drift markers.
 
 A GitHub Actions workflow also runs the verifier on push and pull request against `main`.
 
