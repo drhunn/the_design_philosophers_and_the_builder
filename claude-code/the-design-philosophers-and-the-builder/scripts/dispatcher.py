@@ -5,6 +5,7 @@ from pathlib import Path
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 AGENTS_DIR = PACKAGE_ROOT / "agents"
+GLOBAL_PREAMBLE = "global.md"
 
 ACTION_AGENT_FILES: dict[str, str] = {
     "run_socrates": "socrates.md",
@@ -75,6 +76,13 @@ def _agent_path(agent_file: str, package_root: Path) -> Path:
     return package_root / "agents" / agent_file
 
 
+def _load_with_preamble(agent_path: Path, package_root: Path) -> str:
+    preamble_path = _agent_path(GLOBAL_PREAMBLE, package_root)
+    if not preamble_path.is_file():
+        raise FileNotFoundError(f"missing preamble: agents/{GLOBAL_PREAMBLE}")
+    return preamble_path.read_text(encoding="utf-8") + "\n\n---\n\n" + agent_path.read_text(encoding="utf-8")
+
+
 def resolve_action(action: str, package_root: Path = PACKAGE_ROOT) -> ResolvedAction:
     if action in ACTION_AGENT_FILES:
         agent_file = ACTION_AGENT_FILES[action]
@@ -98,7 +106,8 @@ def load_action(action: str, package_root: Path = PACKAGE_ROOT) -> dict[str, obj
         return data
     if resolved.path is None or not resolved.path.is_file():
         raise FileNotFoundError(f"agent file not found for action {action}: {resolved.relative_path}")
-    data["content"] = resolved.path.read_text(encoding="utf-8")
+    data["content"] = _load_with_preamble(resolved.path, package_root)
+    data["preamble_file"] = f"agents/{GLOBAL_PREAMBLE}"
     return data
 
 
