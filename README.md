@@ -2,9 +2,10 @@
 
 A bounded Mealy-style software-design workflow for designing software from scratch without agent drift, user drift, silent scope expansion, silent repository changes, missing PRD handoff, missing changelog traceability, lump-build implementation, invalid Git branch refs, nested Git worktrees, loose worktree task slicing, or loose patching.
 
-This repository packages the same workflow for three runtimes:
+This repository packages the same workflow for four runtimes:
 
 - Codex Desktop
+- Codex CLI on Linux
 - Claude Code
 - AnythingLLM
 
@@ -51,6 +52,7 @@ Use these folders as the canonical installable packages:
 
 ```text
 codex-desktop/the-design-philosophers-and-the-builder/
+linux/codex-cli/
 claude-code/the-design-philosophers-and-the-builder/
 anythingllm/plugins/agent-skills/the-design-philosophers-and-the-builder/
 ```
@@ -76,6 +78,32 @@ or project-local:
 ```text
 <repo>\.codex\skills\the-design-philosophers-and-the-builder\
 ```
+
+## Codex CLI on Linux
+
+Installable package:
+
+```text
+linux/codex-cli/
+```
+
+This package installs an `AGENTS.md` bridge for Codex CLI on Linux. It does not install Codex CLI itself.
+
+Project-local install:
+
+```bash
+cd linux/codex-cli
+./install.sh --project /path/to/project
+```
+
+Global install:
+
+```bash
+cd linux/codex-cli
+./install.sh --global
+```
+
+The installer refuses to overwrite an existing `AGENTS.md` unless `--force` is supplied.
 
 ## Claude Code
 
@@ -518,6 +546,7 @@ A GitHub Actions workflow runs both verifiers on push and pull request against `
 
 ```text
 codex-desktop/        canonical Codex Desktop package
+linux/                canonical Linux packages, including Codex CLI AGENTS.md bridge
 claude-code/          canonical Claude Code package
 anythingllm/          canonical AnythingLLM package
 proofs/               Lean proof models and proof-checking project
