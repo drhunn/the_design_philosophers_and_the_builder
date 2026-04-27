@@ -63,6 +63,17 @@ targeted_tests = []
 regression_tests = []
 tests_passed = false
 
+[correctness]
+lean_proof_required = false
+lean_proof_updated = false
+lean_proof_paths = []
+lean_proof_commands = []
+lean_proof_passed = false
+lean_proved_obligations = []
+runtime_test_checked_obligations = []
+non_formal_obligations = []
+non_formal_reason = ""
+
 [documentation]
 task_documentation_path = ""
 task_documentation_updated = false

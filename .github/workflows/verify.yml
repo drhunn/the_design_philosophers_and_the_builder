@@ -33,3 +33,6 @@ jobs:
 
       - name: Verify Linux Codex CLI distribution
         run: python tools/verify_linux_codex_cli.py
+
+      - name: Verify Hoare Lean correctness rule
+        run: python tools/verify_hoare_lean_correctness.py
