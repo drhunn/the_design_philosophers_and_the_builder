@@ -30,3 +30,6 @@ jobs:
 
       - name: Verify packages
         run: python tools/verify_packages.py
+
+      - name: Verify Linux Codex CLI distribution
+        run: python tools/verify_linux_codex_cli.py

@@ -47,10 +47,16 @@ flowchart TD
 ```mermaid
 flowchart TD
     Global[agents/global.md]
+    RootAgents[repo root AGENTS.md]
 
+    CodexCLI[Linux Codex CLI Distribution]
     Codex[Codex Desktop Package]
     Claude[Claude Code Package]
     Anything[AnyThingLLM Package]
+
+    CodexCLI --> LinuxAgents[linux/codex-cli/AGENTS.md]
+    CodexCLI --> LinuxInstaller[linux/codex-cli/install.sh]
+    CodexCLI --> RootAgents
 
     Codex --> CodexSkill[SKILL.md]
     Codex --> CodexSM[scripts/state_machine.py]
@@ -87,9 +93,11 @@ flowchart TD
     Handoff[templates/handoff.toml]
     Changelog[CHANGELOG.md]
     Lean[proofs/lean/TheDesignPhilosophers/StateMachine.lean]
+    AgentsRoot[AGENTS.md]
 
     PRD --> SoftwareMap
     SoftwareMap --> Handoff
+    SoftwareMap --> AgentsRoot
     Handoff --> Changelog
     Handoff --> Lean
 ```
@@ -106,6 +114,7 @@ flowchart TD
     PackageVerifier --> PythonRuntime[Python runtime checks]
     PackageVerifier --> AnythingRuntime[AnyThingLLM handler checks]
     PackageVerifier --> Docs[README / template marker checks]
+    PackageVerifier --> CodexCLI[Linux Codex CLI files]
     LeanWorkflow --> LeanProofs[Lean proof build]
 ```
 

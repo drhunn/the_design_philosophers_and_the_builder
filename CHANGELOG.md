@@ -27,6 +27,7 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
+| 2026-04-25 17:20:00 -05:00 | Linux Codex CLI distribution | Added a Linux Codex CLI distribution with root and package `AGENTS.md`, installer, README, package license, software-map coverage, dedicated verifier, and CI wiring. | `c1425caf3639a4c04b6737349a5d4111b3a19bfb` |
 | 2026-04-25 12:35:00 -05:00 | Architecture docs | Added the repo-level software map artifact, linked it from the README, added architecture handoff links, and documented Aristotle ownership of the software map. | `cf337918633acbd567ee1a1cc890ed9c715636da` |
 | 2026-04-25 12:10:00 -05:00 | Repository docs | Added a concise README pattern summary near the top of the file. | `c67dd150206543d88c6937f753c2d215db54f0f0` |
 | 2026-04-25 11:25:00 -05:00 | Verification | Added a CI changelog policy verifier to distinguish meaningful repository changes from changelog-only hash finalization and prevent recursive changelog loops. | `46bae4bd821aaa3a6695e081b983b6cb2e37a87c` |
