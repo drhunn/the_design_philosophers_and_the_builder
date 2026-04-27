@@ -41,6 +41,7 @@ inductive Event where
 
 inductive Guard where
   | prdMarkdownLinked
+  | architectureMarkdownLinked
   | buildPackageComplete
   | featureWorktreeWorkflowComplete
   | taskSlicePlanComplete
@@ -75,7 +76,7 @@ def transition : State -> Event -> Option Transition
   | S1A, idealModelComplete => some { toState := S2, guard := some Guard.prdMarkdownLinked }
   | S1A, newContradictionFound => some { toState := S1, guard := none }
 
-  | S2, architectureComplete => some { toState := S3, guard := none }
+  | S2, architectureComplete => some { toState := S3, guard := some Guard.architectureMarkdownLinked }
   | S2, designGapFound => some { toState := S2, guard := none }
   | S2, productConstraintMissing => some { toState := S1A, guard := none }
 
@@ -251,6 +252,21 @@ theorem ideal_model_complete_implies_prd_markdown (ctx : Guard -> Bool) :
     dispatch ctx S1A idealModelComplete = some S2 ->
     ctx Guard.prdMarkdownLinked = true := by
   cases h : ctx Guard.prdMarkdownLinked <;>
+    simp [dispatch, transition, guardSatisfied, h]
+
+theorem architecture_transition_is_guarded :
+    transition S2 architectureComplete =
+      some { toState := S3, guard := some Guard.architectureMarkdownLinked } := by
+  rfl
+
+theorem architecture_rejected_without_software_map :
+    dispatch noGuardsTrue S2 architectureComplete = none := by
+  rfl
+
+theorem architecture_complete_implies_software_map (ctx : Guard -> Bool) :
+    dispatch ctx S2 architectureComplete = some S3 ->
+    ctx Guard.architectureMarkdownLinked = true := by
+  cases h : ctx Guard.architectureMarkdownLinked <;>
     simp [dispatch, transition, guardSatisfied, h]
 
 theorem task_complete_transition_is_guarded :
