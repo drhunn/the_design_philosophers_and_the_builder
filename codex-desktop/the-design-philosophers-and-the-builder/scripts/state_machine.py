@@ -30,142 +30,130 @@ S13 = "S13_ACCEPTED"
 S14 = "S14_REWORK"
 S15 = "S15_EXPLORATORY"
 
+
+def tr(to: str, actions: list[str], guard: str | None = None) -> tuple[str, list[str], str | None]:
+    return (to, actions, guard)
+
+
 TABLE = {
-    S0: {"new_request": (S1, ["run_socrates"], None)},
+    S0: {"new_request": tr(S1, ["run_socrates"])},
     S1: {
-        "request_is_vague": (S1, ["run_socrates"], None),
-        "problem_is_clear": (S1A, ["run_plato"], None),
-        "prototype_only": (S15, ["allow_prototype", "mark_exploratory_only"], None),
+        "request_is_vague": tr(S1, ["run_socrates"]),
+        "problem_is_clear": tr(S1A, ["run_plato"]),
+        "prototype_only": tr(S15, ["allow_prototype", "mark_exploratory_only"]),
     },
     S1A: {
-        "ideal_model_complete": (S2, ["run_aristotle"], "prd_markdown_linked"),
-        "new_contradiction_found": (S1, ["return_to_socrates"], None),
+        "ideal_model_complete": tr(S2, ["run_aristotle"], "prd_markdown_linked"),
+        "new_contradiction_found": tr(S1, ["return_to_socrates"]),
     },
     S2: {
-        "architecture_complete": (S3, ["run_bacon_prebuild"], None),
-        "design_gap_found": (S2, ["run_aristotle"], None),
-        "product_constraint_missing": (S1A, ["return_to_plato"], None),
+        "architecture_complete": tr(S3, ["run_bacon_prebuild"], "architecture_markdown_linked"),
+        "design_gap_found": tr(S2, ["run_aristotle"]),
+        "product_constraint_missing": tr(S1A, ["return_to_plato"]),
     },
     S3: {
-        "validation_obligations_known": (S4, ["run_hoare_prebuild"], None),
-        "design_gap_found": (S2, ["return_to_aristotle"], None),
-        "product_constraint_missing": (S1A, ["return_to_plato"], None),
+        "validation_obligations_known": tr(S4, ["run_hoare_prebuild"]),
+        "design_gap_found": tr(S2, ["return_to_aristotle"]),
+        "product_constraint_missing": tr(S1A, ["return_to_plato"]),
     },
     S4: {
-        "correctness_obligations_known": (S4A, ["run_epictetus_prebuild"], None),
-        "design_gap_found": (S2, ["return_to_aristotle"], None),
-        "validation_gap_found": (S3, ["return_to_bacon_prebuild"], None),
+        "correctness_obligations_known": tr(S4A, ["run_epictetus_prebuild"]),
+        "design_gap_found": tr(S2, ["return_to_aristotle"]),
+        "validation_gap_found": tr(S3, ["return_to_bacon_prebuild"]),
     },
     S4A: {
-        "operational_obligations_known": (S5, ["run_diogenes_prebuild"], None),
-        "design_gap_found": (S2, ["return_to_aristotle"], None),
-        "validation_gap_found": (S3, ["return_to_bacon_prebuild"], None),
-        "correctness_gap_found": (S4, ["return_to_hoare_prebuild"], None),
-        "product_constraint_missing": (S1A, ["return_to_plato"], None),
+        "operational_obligations_known": tr(S5, ["run_diogenes_prebuild"]),
+        "design_gap_found": tr(S2, ["return_to_aristotle"]),
+        "validation_gap_found": tr(S3, ["return_to_bacon_prebuild"]),
+        "correctness_gap_found": tr(S4, ["return_to_hoare_prebuild"]),
+        "product_constraint_missing": tr(S1A, ["return_to_plato"]),
     },
     S5: {
-        "austerity_review_complete": (S6, ["check_build_package"], None),
-        "excess_complexity_found": (S2, ["return_to_aristotle"], None),
-        "operational_gap_found": (S4A, ["return_to_epictetus_prebuild"], None),
+        "austerity_review_complete": tr(S6, ["check_build_package"]),
+        "excess_complexity_found": tr(S2, ["return_to_aristotle"]),
+        "operational_gap_found": tr(S4A, ["return_to_epictetus_prebuild"]),
     },
     S6: {
-        "build_package_complete": (S6B, ["run_builder_feature_worktree_workflow"], "build_package_complete"),
-        "build_package_incomplete": (S14, ["require_postmortem"], None),
+        "build_package_complete": tr(S6B, ["run_builder_feature_worktree_workflow"], "build_package_complete"),
+        "build_package_incomplete": tr(S14, ["require_postmortem"]),
     },
     S6B: {
-        "feature_worktree_workflow_complete": (S6C, ["run_builder_task_slice_planning"], "feature_worktree_workflow_complete"),
-        "feature_worktree_workflow_failed": (S14, ["return_to_builder_feature_worktree_workflow", "require_postmortem"], None),
-        "feature_inventory_mismatch": (S1A, ["return_to_plato", "require_postmortem"], None),
-        "branch_worktree_mismatch": (S6B, ["repair_feature_worktree_workflow", "require_postmortem"], None),
-        "validation_mapping_failed": (S3, ["return_to_bacon_prebuild", "require_postmortem"], None),
-        "correctness_mapping_failed": (S4, ["return_to_hoare_prebuild", "require_postmortem"], None),
-        "operational_mapping_failed": (S4A, ["return_to_epictetus_prebuild", "require_postmortem"], None),
+        "feature_worktree_workflow_complete": tr(S6C, ["run_builder_task_slice_planning"], "feature_worktree_workflow_complete"),
+        "feature_worktree_workflow_failed": tr(S14, ["return_to_builder_feature_worktree_workflow", "require_postmortem"]),
+        "feature_inventory_mismatch": tr(S1A, ["return_to_plato", "require_postmortem"]),
+        "branch_worktree_mismatch": tr(S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
+        "validation_mapping_failed": tr(S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+        "correctness_mapping_failed": tr(S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+        "operational_mapping_failed": tr(S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
     },
     S6C: {
-        "task_slice_plan_complete": (S7, ["run_builder_task_slice_implementation"], "task_slice_plan_complete"),
-        "task_slice_plan_failed": (S14, ["return_to_task_slice_planning", "require_postmortem"], None),
-        "no_remaining_task_slices": (S7A, ["run_builder_security_review"], "no_remaining_task_slices"),
-        "branch_worktree_mismatch": (S6B, ["repair_feature_worktree_workflow", "require_postmortem"], None),
-        "validation_mapping_failed": (S3, ["return_to_bacon_prebuild", "require_postmortem"], None),
-        "correctness_mapping_failed": (S4, ["return_to_hoare_prebuild", "require_postmortem"], None),
-        "operational_mapping_failed": (S4A, ["return_to_epictetus_prebuild", "require_postmortem"], None),
+        "task_slice_plan_complete": tr(S7, ["run_builder_task_slice_implementation"], "task_slice_plan_complete"),
+        "task_slice_plan_failed": tr(S14, ["return_to_task_slice_planning", "require_postmortem"]),
+        "no_remaining_task_slices": tr(S7A, ["run_builder_security_review"], "no_remaining_task_slices"),
+        "branch_worktree_mismatch": tr(S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
+        "validation_mapping_failed": tr(S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+        "correctness_mapping_failed": tr(S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+        "operational_mapping_failed": tr(S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
     },
     S7: {
-        "task_slice_complete": (S6C, ["run_builder_task_slice_planning"], "task_documentation_updated"),
-        "all_task_slices_complete": (S7A, ["run_builder_security_review"], "all_task_slices_complete"),
-        "task_slice_failed": (S14, ["return_to_builder_task_slice", "require_postmortem"], None),
-        "design_gap_found": (S2, ["return_to_aristotle", "require_postmortem"], None),
-        "validation_gap_found": (S3, ["return_to_bacon_prebuild", "require_postmortem"], None),
-        "correctness_gap_found": (S4, ["return_to_hoare_prebuild", "require_postmortem"], None),
-        "operational_gap_found": (S4A, ["return_to_epictetus_prebuild", "require_postmortem"], None),
-        "branch_worktree_mismatch": (S6B, ["repair_feature_worktree_workflow", "require_postmortem"], None),
+        "task_slice_complete": tr(S6C, ["run_builder_task_slice_planning"], "task_documentation_updated"),
+        "all_task_slices_complete": tr(S7A, ["run_builder_security_review"], "all_task_slices_complete"),
+        "task_slice_failed": tr(S14, ["return_to_builder_task_slice", "require_postmortem"]),
+        "design_gap_found": tr(S2, ["return_to_aristotle", "require_postmortem"]),
+        "validation_gap_found": tr(S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+        "correctness_gap_found": tr(S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+        "operational_gap_found": tr(S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
+        "branch_worktree_mismatch": tr(S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
     },
     S7A: {
-        "security_review_complete": (S7B, ["run_patch_planning"], None),
-        "security_review_failed": (S14, ["return_to_builder_security_review", "require_postmortem"], None),
-        "design_gap_found": (S2, ["return_to_aristotle", "require_postmortem"], None),
+        "security_review_complete": tr(S7B, ["run_patch_planning"]),
+        "security_review_failed": tr(S14, ["return_to_builder_security_review", "require_postmortem"]),
+        "design_gap_found": tr(S2, ["return_to_aristotle", "require_postmortem"]),
     },
-    S7B: {
-        "patch_plan_complete": (S7C, ["run_patch_task_planning"], None),
-        "patch_plan_failed": (S14, ["return_to_patch_planning", "require_postmortem"], None),
-    },
+    S7B: {"patch_plan_complete": tr(S7C, ["run_patch_task_planning"]), "patch_plan_failed": tr(S14, ["return_to_patch_planning", "require_postmortem"])},
     S7C: {
-        "patch_task_plan_complete": (S7D, ["run_patch_task_implementation"], "patch_task_plan_complete"),
-        "patch_task_plan_failed": (S14, ["return_to_patch_task_planning", "require_postmortem"], None),
-        "no_remaining_patch_tasks": (S8, ["run_diogenes_postbuild"], "no_remaining_patch_tasks"),
-        "branch_worktree_mismatch": (S6B, ["repair_feature_worktree_workflow", "require_postmortem"], None),
+        "patch_task_plan_complete": tr(S7D, ["run_patch_task_implementation"], "patch_task_plan_complete"),
+        "patch_task_plan_failed": tr(S14, ["return_to_patch_task_planning", "require_postmortem"]),
+        "no_remaining_patch_tasks": tr(S8, ["run_diogenes_postbuild"], "no_remaining_patch_tasks"),
+        "branch_worktree_mismatch": tr(S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
     },
     S7D: {
-        "patch_task_complete": (S7C, ["run_patch_task_planning"], "patch_task_documentation_updated"),
-        "all_patch_tasks_complete": (S8, ["run_diogenes_postbuild"], "all_patch_tasks_complete"),
-        "patch_task_failed": (S14, ["return_to_patch_task_implementation", "require_postmortem"], None),
-        "validation_gap_found": (S3, ["return_to_bacon_prebuild", "require_postmortem"], None),
-        "correctness_gap_found": (S4, ["return_to_hoare_prebuild", "require_postmortem"], None),
-        "operational_gap_found": (S4A, ["return_to_epictetus_prebuild", "require_postmortem"], None),
-        "branch_worktree_mismatch": (S6B, ["repair_feature_worktree_workflow", "require_postmortem"], None),
+        "patch_task_complete": tr(S7C, ["run_patch_task_planning"], "patch_task_documentation_updated"),
+        "all_patch_tasks_complete": tr(S8, ["run_diogenes_postbuild"], "all_patch_tasks_complete"),
+        "patch_task_failed": tr(S14, ["return_to_patch_task_implementation", "require_postmortem"]),
+        "validation_gap_found": tr(S3, ["return_to_bacon_prebuild", "require_postmortem"]),
+        "correctness_gap_found": tr(S4, ["return_to_hoare_prebuild", "require_postmortem"]),
+        "operational_gap_found": tr(S4A, ["return_to_epictetus_prebuild", "require_postmortem"]),
+        "branch_worktree_mismatch": tr(S6B, ["repair_feature_worktree_workflow", "require_postmortem"]),
     },
-    S8: {
-        "reduction_review_complete": (S9, ["run_bacon_postbuild"], None),
-        "excess_complexity_found": (S14, ["return_to_builder", "require_postmortem"], None),
-    },
-    S9: {
-        "empirical_review_passed": (S10, ["run_hoare_postbuild"], "empirical_review_passed"),
-        "empirical_review_failed": (S14, ["return_to_builder", "require_postmortem"], None),
-    },
-    S10: {
-        "correctness_review_passed": (S11, ["run_epictetus_postbuild"], "correctness_review_passed"),
-        "correctness_review_failed": (S14, ["return_to_builder", "require_postmortem"], None),
-    },
-    S11: {
-        "operations_review_passed": (S12, ["make_admission_decision"], "operations_review_passed"),
-        "operations_review_failed": (S14, ["return_to_builder", "require_postmortem"], None),
-    },
-    S12: {
-        "admission_granted": (S13, ["accept_feature"], "admission_granted"),
-        "admission_denied": (S14, ["require_postmortem"], None),
-    },
+    S8: {"reduction_review_complete": tr(S9, ["run_bacon_postbuild"]), "excess_complexity_found": tr(S14, ["return_to_builder", "require_postmortem"])},
+    S9: {"empirical_review_passed": tr(S10, ["run_hoare_postbuild"], "empirical_review_passed"), "empirical_review_failed": tr(S14, ["return_to_builder", "require_postmortem"])},
+    S10: {"correctness_review_passed": tr(S11, ["run_epictetus_postbuild"], "correctness_review_passed"), "correctness_review_failed": tr(S14, ["return_to_builder", "require_postmortem"])},
+    S11: {"operations_review_passed": tr(S12, ["make_admission_decision"], "operations_review_passed"), "operations_review_failed": tr(S14, ["return_to_builder", "require_postmortem"])},
+    S12: {"admission_granted": tr(S13, ["accept_feature"], "admission_granted"), "admission_denied": tr(S14, ["require_postmortem"])},
     S13: {},
     S14: {
-        "new_contradiction_found": (S1, ["run_socrates"], None),
-        "product_constraint_missing": (S1A, ["run_plato"], None),
-        "design_gap_found": (S2, ["run_aristotle"], None),
-        "validation_gap_found": (S3, ["run_bacon_prebuild"], None),
-        "correctness_gap_found": (S4, ["run_hoare_prebuild"], None),
-        "operational_gap_found": (S4A, ["run_epictetus_prebuild"], None),
-        "excess_complexity_found": (S5, ["run_diogenes_prebuild"], None),
-        "feature_worktree_workflow_failed": (S6B, ["run_builder_feature_worktree_workflow"], None),
-        "task_slice_plan_failed": (S6C, ["run_builder_task_slice_planning"], None),
-        "task_slice_failed": (S7, ["run_builder_task_slice_implementation"], None),
-        "security_review_failed": (S7A, ["run_builder_security_review"], None),
-        "patch_plan_failed": (S7B, ["run_patch_planning"], None),
-        "patch_task_plan_failed": (S7C, ["run_patch_task_planning"], None),
-        "patch_task_failed": (S7D, ["run_patch_task_implementation"], None),
+        "new_contradiction_found": tr(S1, ["run_socrates"]),
+        "product_constraint_missing": tr(S1A, ["run_plato"]),
+        "design_gap_found": tr(S2, ["run_aristotle"]),
+        "validation_gap_found": tr(S3, ["run_bacon_prebuild"]),
+        "correctness_gap_found": tr(S4, ["run_hoare_prebuild"]),
+        "operational_gap_found": tr(S4A, ["run_epictetus_prebuild"]),
+        "excess_complexity_found": tr(S5, ["run_diogenes_prebuild"]),
+        "feature_worktree_workflow_failed": tr(S6B, ["run_builder_feature_worktree_workflow"]),
+        "task_slice_plan_failed": tr(S6C, ["run_builder_task_slice_planning"]),
+        "task_slice_failed": tr(S7, ["run_builder_task_slice_implementation"]),
+        "security_review_failed": tr(S7A, ["run_builder_security_review"]),
+        "patch_plan_failed": tr(S7B, ["run_patch_planning"]),
+        "patch_task_plan_failed": tr(S7C, ["run_patch_task_planning"]),
+        "patch_task_failed": tr(S7D, ["run_patch_task_implementation"]),
     },
-    S15: {"new_contradiction_found": (S1, ["return_to_socrates"], None)},
+    S15: {"new_contradiction_found": tr(S1, ["return_to_socrates"])},
 }
 
 PROOF_GUARDS = {
     "prd_markdown_linked",
+    "architecture_markdown_linked",
     "feature_worktree_workflow_complete",
     "task_slice_plan_complete",
     "task_documentation_updated",
@@ -177,7 +165,7 @@ PROOF_GUARDS = {
     "no_remaining_patch_tasks",
 }
 
-WORKTREE_PROOF_GUARDS = PROOF_GUARDS - {"prd_markdown_linked"}
+WORKTREE_PROOF_GUARDS = PROOF_GUARDS - {"prd_markdown_linked", "architecture_markdown_linked"}
 REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "changelog", "markdown_links"]
 
 
@@ -238,6 +226,8 @@ def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]
 
     if guard == "prd_markdown_linked" and not _present(links.get("prd")):
         errors.append("[markdown_links].prd must link the PRD Markdown file before ideal_model_complete")
+    if guard == "architecture_markdown_linked" and not _present(links.get("architecture")):
+        errors.append("[markdown_links].architecture must link the software map before architecture_complete")
 
     if guard in WORKTREE_PROOF_GUARDS:
         for key in ["active_branch", "worktree_path", "merge_target"]:
@@ -300,83 +290,14 @@ def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]
 
 def valid_handoff() -> dict[str, Any]:
     return {
-        "git": {
-            "active_branch": "task/state-machine--transition-table--guard-checks--reject-invalid-transition",
-            "branch_is_collision_free": True,
-            "worktree_path": "../worktrees/repo/task--state-machine--transition-table--guard-checks--reject-invalid-transition",
-            "worktree_is_flat_sibling": True,
-            "worktree_verified": True,
-            "merge_target": "subfeature/state-machine--transition-table--guard-checks",
-            "merge_path": ["task/state-machine--transition-table--guard-checks--reject-invalid-transition", "subfeature/state-machine--transition-table--guard-checks", "feature/state-machine", "main"],
-        },
-        "task": {
-            "task_id": "T001",
-            "feature_slug": "state-machine",
-            "subfeature_path_slug": "transition-table--guard-checks",
-            "task_slug": "reject-invalid-transition",
-            "purpose": "Reject invalid transitions and require proof fields.",
-            "status": "complete",
-            "touched_files": ["scripts/state_machine.py"],
-            "allowed_files": ["scripts/state_machine.py"],
-            "expected_behavior": "Invalid transitions and missing proof are rejected.",
-        },
-        "patch": {
-            "patch_task_id": "P001",
-            "patch_id": "P001",
-            "kind": "security",
-            "risk_or_defect": "Missing proof validation.",
-            "affected_branch": "task/state-machine--transition-table--guard-checks--reject-invalid-transition",
-            "affected_worktree_path": "../worktrees/repo/patch--state-machine--transition-table--guard-checks--P001",
-            "merge_target": "task/state-machine--transition-table--guard-checks--reject-invalid-transition",
-            "merge_path": ["patch/state-machine--transition-table--guard-checks--P001", "task/state-machine--transition-table--guard-checks--reject-invalid-transition"],
-            "allowed_files": ["scripts/state_machine.py"],
-            "touched_files": ["scripts/state_machine.py"],
-            "status": "complete",
-        },
-        "validation": {
-            "bacon_checks": ["happy path", "negative guard checks"],
-            "bacon_passed": True,
-            "hoare_obligations": ["invalid transitions rejected"],
-            "hoare_passed": True,
-            "epictetus_obligations": ["bad artifacts fail closed"],
-            "epictetus_passed": True,
-            "diogenes_cut_check": "No extra workflow bypass added.",
-            "diogenes_passed": True,
-            "targeted_tests": ["task_slice_complete without docs fails"],
-            "regression_tests": ["happy path"],
-            "tests_passed": True,
-        },
-        "documentation": {
-            "task_documentation_path": "docs/tasks/T001.md",
-            "task_documentation_updated": True,
-            "patch_documentation_path": "docs/patches/P001.md",
-            "patch_documentation_updated": True,
-            "postmortem_paths": [],
-        },
-        "remaining_work": {
-            "remaining_task_slices": [],
-            "remaining_patch_tasks": [],
-            "no_remaining_task_slices": True,
-            "no_remaining_patch_tasks": True,
-        },
-        "changelog": {
-            "repo_changed": False,
-            "required": False,
-            "updated": False,
-            "date_time": "",
-            "scope": "",
-            "summary": "",
-            "commit_or_merge_hash": "",
-            "pending_hash": False,
-            "path": "CHANGELOG.md",
-            "reason": "pure validation fixture",
-        },
-        "markdown_links": {
-            "prd": ["docs/product/prd.md"],
-            "reports": [],
-            "rationale": [],
-            "postmortems": [],
-        },
+        "git": {"active_branch": "task/state-machine--transition-table--guard-checks--reject-invalid-transition", "branch_is_collision_free": True, "worktree_path": "../worktrees/repo/task--state-machine--transition-table--guard-checks--reject-invalid-transition", "worktree_is_flat_sibling": True, "worktree_verified": True, "merge_target": "subfeature/state-machine--transition-table--guard-checks", "merge_path": ["task/state-machine--transition-table--guard-checks--reject-invalid-transition", "subfeature/state-machine--transition-table--guard-checks", "feature/state-machine", "main"]},
+        "task": {"task_id": "T001", "feature_slug": "state-machine", "subfeature_path_slug": "transition-table--guard-checks", "task_slug": "reject-invalid-transition", "purpose": "Reject invalid transitions and require proof fields.", "status": "complete", "touched_files": ["scripts/state_machine.py"], "allowed_files": ["scripts/state_machine.py"], "expected_behavior": "Invalid transitions and missing proof are rejected."},
+        "patch": {"patch_task_id": "P001", "patch_id": "P001", "kind": "security", "risk_or_defect": "Missing proof validation.", "affected_branch": "task/state-machine--transition-table--guard-checks--reject-invalid-transition", "affected_worktree_path": "../worktrees/repo/patch--state-machine--transition-table--guard-checks--P001", "merge_target": "task/state-machine--transition-table--guard-checks--reject-invalid-transition", "merge_path": ["patch/state-machine--transition-table--guard-checks--P001", "task/state-machine--transition-table--guard-checks--reject-invalid-transition"], "allowed_files": ["scripts/state_machine.py"], "touched_files": ["scripts/state_machine.py"], "status": "complete"},
+        "validation": {"bacon_checks": ["happy path", "negative guard checks"], "bacon_passed": True, "hoare_obligations": ["invalid transitions rejected"], "hoare_passed": True, "epictetus_obligations": ["bad artifacts fail closed"], "epictetus_passed": True, "diogenes_cut_check": "No extra workflow bypass added.", "diogenes_passed": True, "targeted_tests": ["task_slice_complete without docs fails"], "regression_tests": ["happy path"], "tests_passed": True},
+        "documentation": {"task_documentation_path": "docs/tasks/T001.md", "task_documentation_updated": True, "patch_documentation_path": "docs/patches/P001.md", "patch_documentation_updated": True, "postmortem_paths": []},
+        "remaining_work": {"remaining_task_slices": [], "remaining_patch_tasks": [], "no_remaining_task_slices": True, "no_remaining_patch_tasks": True},
+        "changelog": {"repo_changed": False, "required": False, "updated": False, "date_time": "", "scope": "", "summary": "", "commit_or_merge_hash": "", "pending_hash": False, "path": "CHANGELOG.md", "reason": "pure validation fixture"},
+        "markdown_links": {"prd": ["docs/product/prd.md"], "architecture": ["docs/architecture/software-map.md"], "reports": [], "rationale": [], "postmortems": []},
     }
 
 
@@ -429,44 +350,11 @@ class Machine:
 
 
 def happy_path():
-    return [
-        "new_request",
-        "problem_is_clear",
-        "ideal_model_complete",
-        "architecture_complete",
-        "validation_obligations_known",
-        "correctness_obligations_known",
-        "operational_obligations_known",
-        "austerity_review_complete",
-        "build_package_complete",
-        "feature_worktree_workflow_complete",
-        "task_slice_plan_complete",
-        "task_slice_complete",
-        "task_slice_plan_complete",
-        "all_task_slices_complete",
-        "security_review_complete",
-        "patch_plan_complete",
-        "patch_task_plan_complete",
-        "patch_task_complete",
-        "patch_task_plan_complete",
-        "all_patch_tasks_complete",
-        "reduction_review_complete",
-        "empirical_review_passed",
-        "correctness_review_passed",
-        "operations_review_passed",
-        "admission_granted",
-    ]
+    return ["new_request", "problem_is_clear", "ideal_model_complete", "architecture_complete", "validation_obligations_known", "correctness_obligations_known", "operational_obligations_known", "austerity_review_complete", "build_package_complete", "feature_worktree_workflow_complete", "task_slice_plan_complete", "task_slice_complete", "task_slice_plan_complete", "all_task_slices_complete", "security_review_complete", "patch_plan_complete", "patch_task_plan_complete", "patch_task_complete", "patch_task_plan_complete", "all_patch_tasks_complete", "reduction_review_complete", "empirical_review_passed", "correctness_review_passed", "operations_review_passed", "admission_granted"]
 
 
 def happy_context():
-    return {
-        "build_package_complete": True,
-        "handoff": valid_handoff(),
-        "empirical_review_passed": True,
-        "correctness_review_passed": True,
-        "operations_review_passed": True,
-        "admission_granted": True,
-    }
+    return {"build_package_complete": True, "handoff": valid_handoff(), "empirical_review_passed": True, "correctness_review_passed": True, "operations_review_passed": True, "admission_granted": True}
 
 
 if __name__ == "__main__":
