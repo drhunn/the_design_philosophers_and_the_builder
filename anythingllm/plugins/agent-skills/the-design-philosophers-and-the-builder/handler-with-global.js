@@ -121,6 +121,9 @@ async function dispatchWithRuntimeGuard(args) {
     if (validationErrors.length) {
       return JSON.stringify({ ok: false, error: "handoff validation failed for guard postbuild_lean_correctness_checked", validation_errors: validationErrors }, null, 2);
     }
+    const context = parseContext(args.context_json);
+    context.correctness_review_passed = true;
+    return await base.runtime.handler({ ...args, operation: "dispatch", context_json: JSON.stringify(context) });
   }
   return await base.runtime.handler({ ...args, operation: "dispatch" });
 }
