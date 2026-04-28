@@ -43,6 +43,14 @@ PY_RUNTIME_MARKERS = [
 ANYTHING_RUNTIME_MARKERS = [
     "postbuild_lean_correctness_checked",
     "validatePostbuildLeanCorrectness",
+    "[correctness].lean_proof_required must explicitly be true or false",
+    "S10_POST_BUILD_CORRECTNESS_REVIEW",
+    "correctness_review_passed",
+]
+
+ANYTHING_WRAPPER_MARKERS = [
+    "postbuild_lean_correctness_checked",
+    "validatePostbuildLeanCorrectness",
     "correctnessSectionTemplate",
     "S10_POST_BUILD_CORRECTNESS_REVIEW",
     "correctness_review_passed",
@@ -97,9 +105,12 @@ def check_python_runtime(errors: list[str], package: Path) -> None:
 
 
 def check_anything_runtime(errors: list[str]) -> None:
-    path = ANYTHING / "handler-with-global.js"
+    base_path = ANYTHING / "handler.js"
+    wrapper_path = ANYTHING / "handler-with-global.js"
     for marker in ANYTHING_RUNTIME_MARKERS:
-        require_marker(errors, path, marker)
+        require_marker(errors, base_path, marker)
+    for marker in ANYTHING_WRAPPER_MARKERS:
+        require_marker(errors, wrapper_path, marker)
 
 
 def check_lean_model(errors: list[str]) -> None:

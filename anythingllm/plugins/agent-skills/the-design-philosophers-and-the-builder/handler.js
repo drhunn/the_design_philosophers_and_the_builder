@@ -133,7 +133,7 @@ const TABLE = {
     empirical_review_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
   },
   [STATES.S10]: {
-    correctness_review_passed: t(STATES.S11, ["run_epictetus_postbuild"], "correctness_review_passed"),
+    correctness_review_passed: t(STATES.S11, ["run_epictetus_postbuild"], "postbuild_lean_correctness_checked"),
     correctness_review_failed: t(STATES.S14, ["return_to_builder", "require_postmortem"]),
   },
   [STATES.S11]: {
@@ -176,9 +176,10 @@ const PROOF_GUARDS = new Set([
   "patch_task_documentation_updated",
   "all_patch_tasks_complete",
   "no_remaining_patch_tasks",
+  "postbuild_lean_correctness_checked",
 ]);
-const WORKTREE_PROOF_GUARDS = new Set([...PROOF_GUARDS].filter(g => g !== "prd_markdown_linked" && g !== "architecture_markdown_linked"));
-const REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "changelog", "markdown_links"];
+const WORKTREE_PROOF_GUARDS = new Set([...PROOF_GUARDS].filter(g => g !== "prd_markdown_linked" && g !== "architecture_markdown_linked" && g !== "postbuild_lean_correctness_checked"));
+const REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "correctness", "documentation", "remaining_work", "changelog", "markdown_links"];
 
 const ACTION_AGENT_FILES = {
   run_socrates: "socrates.md", return_to_socrates: "socrates.md",
@@ -221,13 +222,45 @@ function validateChangelog(changelog) {
   return errors;
 }
 
+function validatePostbuildLeanCorrectness(correctness) {
+  const errors = [];
+  if (typeof correctness.lean_proof_required !== "boolean") {
+    errors.push("[correctness].lean_proof_required must explicitly be true or false");
+    return errors;
+  }
+  const leanProved = Array.isArray(correctness.lean_proved_obligations) ? correctness.lean_proved_obligations : null;
+  const runtimeChecked = Array.isArray(correctness.runtime_test_checked_obligations) ? correctness.runtime_test_checked_obligations : null;
+  const nonFormal = Array.isArray(correctness.non_formal_obligations) ? correctness.non_formal_obligations : null;
+  if (!leanProved || !runtimeChecked || !nonFormal) {
+    errors.push("[correctness] obligation fields must be lists");
+    return errors;
+  }
+  if (leanProved.length === 0 && runtimeChecked.length === 0 && nonFormal.length === 0) {
+    errors.push("[correctness] must classify at least one post-build correctness obligation");
+  }
+  if (correctness.lean_proof_required === true) {
+    if (correctness.lean_proof_updated !== true) errors.push("[correctness].lean_proof_updated must be true when Lean proof is required");
+    if (correctness.lean_proof_passed !== true) errors.push("[correctness].lean_proof_passed must be true when Lean proof is required");
+    if (!present(correctness.lean_proof_paths)) errors.push("[correctness].lean_proof_paths is required when Lean proof is required");
+    if (!present(correctness.lean_proof_commands)) errors.push("[correctness].lean_proof_commands is required when Lean proof is required");
+    if (!present(leanProved)) errors.push("[correctness].lean_proved_obligations is required when Lean proof is required");
+  }
+  if (nonFormal.length > 0 && !present(correctness.non_formal_reason)) errors.push("[correctness].non_formal_reason is required when non-formal obligations are listed");
+  return errors;
+}
+
 function validateHandoffObject(handoff, guard = "task_documentation_updated") {
   const errors = [];
   for (const s of REQUIRED_SECTIONS) if (!handoff || typeof handoff[s] !== "object") errors.push(`missing [${s}] section`);
-  const git = handoff.git || {}, task = handoff.task || {}, patch = handoff.patch || {}, validation = handoff.validation || {}, docs = handoff.documentation || {}, remaining = handoff.remaining_work || {}, changelog = handoff.changelog || {}, links = handoff.markdown_links || {};
+  const git = handoff.git || {}, task = handoff.task || {}, patch = handoff.patch || {}, validation = handoff.validation || {}, correctness = handoff.correctness || {}, docs = handoff.documentation || {}, remaining = handoff.remaining_work || {}, changelog = handoff.changelog || {}, links = handoff.markdown_links || {};
   errors.push(...validateChangelog(changelog));
   if (guard === "prd_markdown_linked" && !present(links.prd)) errors.push("[markdown_links].prd must link the PRD Markdown file before ideal_model_complete");
   if (guard === "architecture_markdown_linked" && !present(links.architecture)) errors.push("[markdown_links].architecture must link the software map before architecture_complete");
+  if (guard === "postbuild_lean_correctness_checked") {
+    errors.push(...validatePostbuildLeanCorrectness(correctness));
+    if (validation.hoare_passed !== true) errors.push("[validation].hoare_passed must be true before correctness_review_passed");
+    if (validation.tests_passed !== true) errors.push("[validation].tests_passed must be true before correctness_review_passed");
+  }
   if (WORKTREE_PROOF_GUARDS.has(guard)) {
     for (const k of ["active_branch", "worktree_path", "merge_target"]) if (!present(git[k])) errors.push(`[git].${k} is required`);
     if (git.branch_is_collision_free !== true) errors.push("[git].branch_is_collision_free must be true");
@@ -253,11 +286,11 @@ function loadActions(actions) { return actions.map(loadAction); }
 function dispatch(state, event, context = {}) { const transitions = TABLE[state]; if (!transitions) return { ok: false, error: `No transitions defined for state: ${state}` }; const transition = transitions[event]; if (!transition) return { ok: false, error: `Invalid event '${event}' in state '${state}'.`, allowed_events: availableEvents(state) }; if (transition.guard) { if (PROOF_GUARDS.has(transition.guard)) { const artifact = artifactFromContext(context); if (!artifact) return { ok: false, error: `Required proof handoff missing for guard: ${transition.guard}` }; const errors = validateHandoffObject(artifact, transition.guard); if (errors.length) return { ok: false, error: `handoff validation failed for guard ${transition.guard}`, validation_errors: errors }; } else if (context[transition.guard] !== true) return { ok: false, error: `Required context flag not satisfied: ${transition.guard}`, required_context_flag: transition.guard }; } return { ok: true, from_state: state, event, to_state: transition.to, actions: transition.actions, timestamp: new Date().toISOString() }; }
 
 function handoffTemplate() {
-  return `artifact_id = ""\nstate = ""\nagent = ""\nemitted_event = ""\nnext_state = ""\n\n[bounded_input]\nreferences = []\nsummary = ""\n\n[scope_boundary]\nsummary = ""\nallowed = []\nforbidden = []\n\n[git]\nrepository = ""\nremote = ""\nbase_branch = "main"\nactive_branch = ""\nbranch_namespace = ""\nbranch_is_collision_free = false\nworktree_path = ""\nworktree_is_flat_sibling = false\nworktree_verified = false\nmerge_target = ""\nmerge_path = []\n\n[task]\ntask_id = ""\nfeature_slug = ""\nsubfeature_path_slug = ""\ntask_slug = ""\npurpose = ""\nstatus = "not_started"\ntouched_files = []\nallowed_files = []\nexpected_behavior = ""\n\n[patch]\npatch_task_id = ""\npatch_id = ""\nkind = ""\nrisk_or_defect = ""\naffected_branch = ""\naffected_worktree_path = ""\nmerge_target = ""\nmerge_path = []\nallowed_files = []\ntouched_files = []\nstatus = "not_started"\n\n[validation]\nbacon_checks = []\nbacon_passed = false\nhoare_obligations = []\nhoare_passed = false\nepictetus_obligations = []\nepictetus_passed = false\ndiogenes_cut_check = ""\ndiogenes_passed = false\ntargeted_tests = []\nregression_tests = []\ntests_passed = false\n\n[documentation]\ntask_documentation_path = ""\ntask_documentation_updated = false\npatch_documentation_path = ""\npatch_documentation_updated = false\npostmortem_paths = []\n\n[remaining_work]\nremaining_task_slices = []\nremaining_patch_tasks = []\nno_remaining_task_slices = false\nno_remaining_patch_tasks = false\n\n[findings]\nsummary = ""\n\n[decisions]\nsummary = ""\nitems = []\n\n[assumptions]\nitems = []\n\n[unresolved_issues]\nitems = []\nblocking = false\n\n[changelog]\nrepo_changed = false\nrequired = false\nupdated = false\ndate_time = ""\nscope = ""\nsummary = ""\ncommit_or_merge_hash = ""\npending_hash = false\npath = "CHANGELOG.md"\nreason = ""\n\n[markdown_links]\nprd = []\narchitecture = []\nreports = []\nrationale = []\npostmortems = []\n`;
+  return `artifact_id = ""\nstate = ""\nagent = ""\nemitted_event = ""\nnext_state = ""\n\n[bounded_input]\nreferences = []\nsummary = ""\n\n[scope_boundary]\nsummary = ""\nallowed = []\nforbidden = []\n\n[git]\nrepository = ""\nremote = ""\nbase_branch = "main"\nactive_branch = ""\nbranch_namespace = ""\nbranch_is_collision_free = false\nworktree_path = ""\nworktree_is_flat_sibling = false\nworktree_verified = false\nmerge_target = ""\nmerge_path = []\n\n[task]\ntask_id = ""\nfeature_slug = ""\nsubfeature_path_slug = ""\ntask_slug = ""\npurpose = ""\nstatus = "not_started"\ntouched_files = []\nallowed_files = []\nexpected_behavior = ""\n\n[patch]\npatch_task_id = ""\npatch_id = ""\nkind = ""\nrisk_or_defect = ""\naffected_branch = ""\naffected_worktree_path = ""\nmerge_target = ""\nmerge_path = []\nallowed_files = []\ntouched_files = []\nstatus = "not_started"\n\n[validation]\nbacon_checks = []\nbacon_passed = false\nhoare_obligations = []\nhoare_passed = false\nepictetus_obligations = []\nepictetus_passed = false\ndiogenes_cut_check = ""\ndiogenes_passed = false\ntargeted_tests = []\nregression_tests = []\ntests_passed = false\n\n[correctness]\nlean_proof_required = false\nlean_proof_updated = false\nlean_proof_paths = []\nlean_proof_commands = []\nlean_proof_passed = false\nlean_proved_obligations = []\nruntime_test_checked_obligations = []\nnon_formal_obligations = []\nnon_formal_reason = ""\n\n[documentation]\ntask_documentation_path = ""\ntask_documentation_updated = false\npatch_documentation_path = ""\npatch_documentation_updated = false\npostmortem_paths = []\n\n[remaining_work]\nremaining_task_slices = []\nremaining_patch_tasks = []\nno_remaining_task_slices = false\nno_remaining_patch_tasks = false\n\n[findings]\nsummary = ""\n\n[decisions]\nsummary = ""\nitems = []\n\n[assumptions]\nitems = []\n\n[unresolved_issues]\nitems = []\nblocking = false\n\n[changelog]\nrepo_changed = false\nrequired = false\nupdated = false\ndate_time = ""\nscope = ""\nsummary = ""\ncommit_or_merge_hash = ""\npending_hash = false\npath = "CHANGELOG.md"\nreason = ""\n\n[markdown_links]\nprd = []\narchitecture = []\nreports = []\nrationale = []\npostmortems = []\n`;
 }
 
-function describe() { return { name: "The Design Philosophers and the Builder", purpose: "Bounded Mealy workflow with proof-carrying TOML handoffs, explicit changelog decisions, guarded PRD Markdown and software-map architecture handoffs, one-task slices, one-patch patch tasks, and fixed action-to-agent dispatch.", operations: ["describe", "available_events", "dispatch", "dispatch_and_load", "resolve_actions", "load_actions", "happy_path", "handoff_template", "validate_handoff", "routing_guidance", "builder_constraint"] }; }
-function routingGuidance(userInput = "") { return { user_input: userInput, guidance: ["If it changes the real problem, route to Socrates.", "If it changes PRD/product form, route to Plato.", "If it changes structure or the software map, route to Aristotle.", "If it changes evidence or validation, route to Bacon.", "If it changes invariants or correctness, route to Hoare.", "If it changes failure behavior or operational tolerance, route to Epictetus.", "If it changes repository setup, feature worktree workflow, task slicing, or patch task implementation, route to Builder."], note: "Every handoff must explicitly set [changelog].repo_changed to true or false. ideal_model_complete requires [markdown_links].prd. architecture_complete requires [markdown_links].architecture." }; }
+function describe() { return { name: "The Design Philosophers and the Builder", purpose: "Bounded Mealy workflow with proof-carrying TOML handoffs, explicit changelog decisions, guarded PRD Markdown, guarded software-map architecture handoffs, guarded Hoare Lean correctness evidence, one-task slices, one-patch patch tasks, and fixed action-to-agent dispatch.", operations: ["describe", "available_events", "dispatch", "dispatch_and_load", "resolve_actions", "load_actions", "happy_path", "handoff_template", "validate_handoff", "routing_guidance", "builder_constraint"] }; }
+function routingGuidance(userInput = "") { return { user_input: userInput, guidance: ["If it changes the real problem, route to Socrates.", "If it changes PRD/product form, route to Plato.", "If it changes structure or the software map, route to Aristotle.", "If it changes evidence or validation, route to Bacon.", "If it changes invariants or correctness, route to Hoare.", "If it changes failure behavior or operational tolerance, route to Epictetus.", "If it changes repository setup, feature worktree workflow, task slicing, or patch task implementation, route to Builder."], note: "Every handoff must explicitly set [changelog].repo_changed to true or false. ideal_model_complete requires [markdown_links].prd. architecture_complete requires [markdown_links].architecture. correctness_review_passed requires [correctness] Lean proof classification evidence." }; }
 function builderConstraint() { return { constraint: "Builder is not allowed to build the whole design as a lump.", required_behavior: ["Feature Branch Workflow", "create or initialize the GitHub repository", "do not create parent and child refs in the same Git namespace", "use branch pattern subfeature/<feature-slug>--<sub-feature-path-slug>", "do not nest Git worktrees inside other Git worktrees", "run mapped Bacon validation", "check mapped Hoare correctness obligations", "check mapped Epictetus operational obligations", "confirm Diogenes cuts were not reintroduced", "document before next task", "document before next patch", "record changelog decision", "never batch patches"] }; }
 function happyPath() { return ["new_request", "problem_is_clear", "ideal_model_complete", "architecture_complete", "validation_obligations_known", "correctness_obligations_known", "operational_obligations_known", "austerity_review_complete", "build_package_complete", "feature_worktree_workflow_complete", "task_slice_plan_complete", "task_slice_complete", "task_slice_plan_complete", "all_task_slices_complete", "security_review_complete", "patch_plan_complete", "patch_task_plan_complete", "patch_task_complete", "patch_task_plan_complete", "all_patch_tasks_complete", "reduction_review_complete", "empirical_review_passed", "correctness_review_passed", "operations_review_passed", "admission_granted"]; }
 
