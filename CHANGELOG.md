@@ -27,6 +27,7 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
+| 2026-04-25 18:55:00 -05:00 | AnythingLLM runtime | Folded the Hoare Lean correctness guard into the AnythingLLM base handler and extended verifier coverage so the base handler cannot drift behind the wrapper. | `d1b72fe18ee761c3eb51ef8684ee01618da2d756` |
 | 2026-04-25 18:40:00 -05:00 | Runtime guards | Made `correctness_review_passed` fail closed on Hoare Lean correctness evidence in the Codex, Claude, and AnythingLLM runtimes and expanded verifier coverage for that guard. | `147002d663ca0147dae5533d988c29bd93f02dfa` |
 | 2026-04-25 18:25:00 -05:00 | Correctness workflow | Added Hoare post-build Lean correctness documentation, handoff correctness proof fields, and CI verifier coverage. | `8157502fe15858dc75a7bf967bbb63bd9439d584` |
 | 2026-04-25 17:45:00 -05:00 | Runtime guards | Enforced the software-map architecture handoff guard in Python, AnythingLLM, and Lean so `architecture_complete` requires an architecture Markdown link. | `e475b74b7e6bed7f9617d816477db28e2772a984` |
