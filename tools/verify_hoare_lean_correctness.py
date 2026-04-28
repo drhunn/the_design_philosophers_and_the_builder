@@ -4,11 +4,11 @@ import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGES = [
-    ROOT / "codex-desktop" / "the-design-philosophers-and-the-builder",
-    ROOT / "claude-code" / "the-design-philosophers-and-the-builder",
-    ROOT / "anythingllm" / "plugins" / "agent-skills" / "the-design-philosophers-and-the-builder",
-]
+CODEX = ROOT / "codex-desktop" / "the-design-philosophers-and-the-builder"
+CLAUDE = ROOT / "claude-code" / "the-design-philosophers-and-the-builder"
+ANYTHING = ROOT / "anythingllm" / "plugins" / "agent-skills" / "the-design-philosophers-and-the-builder"
+PACKAGES = [CODEX, CLAUDE, ANYTHING]
+PY_PACKAGES = [CODEX, CLAUDE]
 LEAN_MODEL = ROOT / "proofs" / "lean" / "TheDesignPhilosophers" / "StateMachine.lean"
 
 HOARE_MARKERS = [
@@ -30,6 +30,22 @@ CORRECTNESS_FIELDS = [
     "runtime_test_checked_obligations",
     "non_formal_obligations",
     "non_formal_reason",
+]
+
+PY_RUNTIME_MARKERS = [
+    "postbuild_lean_correctness_checked",
+    "_validate_postbuild_lean_correctness",
+    "[correctness].lean_proof_required must explicitly be true or false",
+    "[correctness].lean_proof_passed must be true when Lean proof is required",
+    "[correctness] must classify at least one post-build correctness obligation",
+]
+
+ANYTHING_RUNTIME_MARKERS = [
+    "postbuild_lean_correctness_checked",
+    "validatePostbuildLeanCorrectness",
+    "correctnessSectionTemplate",
+    "S10_POST_BUILD_CORRECTNESS_REVIEW",
+    "correctness_review_passed",
 ]
 
 LEAN_MARKERS = [
@@ -74,6 +90,18 @@ def check_handoff_template(errors: list[str], package: Path) -> None:
             errors.append(f"{path.relative_to(ROOT)} missing [correctness].{field}")
 
 
+def check_python_runtime(errors: list[str], package: Path) -> None:
+    path = package / "scripts" / "state_machine.py"
+    for marker in PY_RUNTIME_MARKERS:
+        require_marker(errors, path, marker)
+
+
+def check_anything_runtime(errors: list[str]) -> None:
+    path = ANYTHING / "handler-with-global.js"
+    for marker in ANYTHING_RUNTIME_MARKERS:
+        require_marker(errors, path, marker)
+
+
 def check_lean_model(errors: list[str]) -> None:
     for marker in LEAN_MARKERS:
         require_marker(errors, LEAN_MODEL, marker)
@@ -84,6 +112,9 @@ def main() -> int:
     for package in PACKAGES:
         check_hoare_agent(errors, package)
         check_handoff_template(errors, package)
+    for package in PY_PACKAGES:
+        check_python_runtime(errors, package)
+    check_anything_runtime(errors)
     check_lean_model(errors)
     if errors:
         print("Hoare Lean correctness verification failed:")

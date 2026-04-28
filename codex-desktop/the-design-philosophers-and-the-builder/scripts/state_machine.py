@@ -128,7 +128,7 @@ TABLE = {
     },
     S8: {"reduction_review_complete": tr(S9, ["run_bacon_postbuild"]), "excess_complexity_found": tr(S14, ["return_to_builder", "require_postmortem"])},
     S9: {"empirical_review_passed": tr(S10, ["run_hoare_postbuild"], "empirical_review_passed"), "empirical_review_failed": tr(S14, ["return_to_builder", "require_postmortem"])},
-    S10: {"correctness_review_passed": tr(S11, ["run_epictetus_postbuild"], "correctness_review_passed"), "correctness_review_failed": tr(S14, ["return_to_builder", "require_postmortem"])},
+    S10: {"correctness_review_passed": tr(S11, ["run_epictetus_postbuild"], "postbuild_lean_correctness_checked"), "correctness_review_failed": tr(S14, ["return_to_builder", "require_postmortem"])},
     S11: {"operations_review_passed": tr(S12, ["make_admission_decision"], "operations_review_passed"), "operations_review_failed": tr(S14, ["return_to_builder", "require_postmortem"])},
     S12: {"admission_granted": tr(S13, ["accept_feature"], "admission_granted"), "admission_denied": tr(S14, ["require_postmortem"])},
     S13: {},
@@ -163,10 +163,11 @@ PROOF_GUARDS = {
     "patch_task_documentation_updated",
     "all_patch_tasks_complete",
     "no_remaining_patch_tasks",
+    "postbuild_lean_correctness_checked",
 }
 
-WORKTREE_PROOF_GUARDS = PROOF_GUARDS - {"prd_markdown_linked", "architecture_markdown_linked"}
-REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "documentation", "remaining_work", "changelog", "markdown_links"]
+WORKTREE_PROOF_GUARDS = PROOF_GUARDS - {"prd_markdown_linked", "architecture_markdown_linked", "postbuild_lean_correctness_checked"}
+REQUIRED_SECTIONS = ["git", "task", "patch", "validation", "correctness", "documentation", "remaining_work", "changelog", "markdown_links"]
 
 
 def _present(value: Any) -> bool:
@@ -207,6 +208,35 @@ def _validate_changelog(changelog: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _validate_postbuild_lean_correctness(correctness: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(correctness.get("lean_proof_required"), bool):
+        errors.append("[correctness].lean_proof_required must explicitly be true or false")
+        return errors
+    lean_proved = correctness.get("lean_proved_obligations", [])
+    runtime_checked = correctness.get("runtime_test_checked_obligations", [])
+    non_formal = correctness.get("non_formal_obligations", [])
+    if not isinstance(lean_proved, list) or not isinstance(runtime_checked, list) or not isinstance(non_formal, list):
+        errors.append("[correctness] obligation fields must be lists")
+        return errors
+    if not lean_proved and not runtime_checked and not non_formal:
+        errors.append("[correctness] must classify at least one post-build correctness obligation")
+    if correctness["lean_proof_required"] is True:
+        if correctness.get("lean_proof_updated") is not True:
+            errors.append("[correctness].lean_proof_updated must be true when Lean proof is required")
+        if correctness.get("lean_proof_passed") is not True:
+            errors.append("[correctness].lean_proof_passed must be true when Lean proof is required")
+        if not _present(correctness.get("lean_proof_paths")):
+            errors.append("[correctness].lean_proof_paths is required when Lean proof is required")
+        if not _present(correctness.get("lean_proof_commands")):
+            errors.append("[correctness].lean_proof_commands is required when Lean proof is required")
+        if not _present(lean_proved):
+            errors.append("[correctness].lean_proved_obligations is required when Lean proof is required")
+    if non_formal and not _present(correctness.get("non_formal_reason")):
+        errors.append("[correctness].non_formal_reason is required when non-formal obligations are listed")
+    return errors
+
+
 def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]:
     errors: list[str] = []
     for section_name in REQUIRED_SECTIONS:
@@ -217,6 +247,7 @@ def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]
     task = _section(handoff, "task")
     patch = _section(handoff, "patch")
     validation = _section(handoff, "validation")
+    correctness = _section(handoff, "correctness")
     docs = _section(handoff, "documentation")
     remaining = _section(handoff, "remaining_work")
     changelog = _section(handoff, "changelog")
@@ -228,6 +259,12 @@ def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]
         errors.append("[markdown_links].prd must link the PRD Markdown file before ideal_model_complete")
     if guard == "architecture_markdown_linked" and not _present(links.get("architecture")):
         errors.append("[markdown_links].architecture must link the software map before architecture_complete")
+    if guard == "postbuild_lean_correctness_checked":
+        errors.extend(_validate_postbuild_lean_correctness(correctness))
+        if validation.get("hoare_passed") is not True:
+            errors.append("[validation].hoare_passed must be true before correctness_review_passed")
+        if validation.get("tests_passed") is not True:
+            errors.append("[validation].tests_passed must be true before correctness_review_passed")
 
     if guard in WORKTREE_PROOF_GUARDS:
         for key in ["active_branch", "worktree_path", "merge_target"]:
@@ -284,7 +321,6 @@ def validate_handoff_for_guard(handoff: dict[str, Any], guard: str) -> list[str]
             errors.append("[remaining_work].no_remaining_patch_tasks must be true")
         if remaining.get("remaining_patch_tasks", []) != []:
             errors.append("[remaining_work].remaining_patch_tasks must be empty")
-
     return errors
 
 
@@ -294,6 +330,7 @@ def valid_handoff() -> dict[str, Any]:
         "task": {"task_id": "T001", "feature_slug": "state-machine", "subfeature_path_slug": "transition-table--guard-checks", "task_slug": "reject-invalid-transition", "purpose": "Reject invalid transitions and require proof fields.", "status": "complete", "touched_files": ["scripts/state_machine.py"], "allowed_files": ["scripts/state_machine.py"], "expected_behavior": "Invalid transitions and missing proof are rejected."},
         "patch": {"patch_task_id": "P001", "patch_id": "P001", "kind": "security", "risk_or_defect": "Missing proof validation.", "affected_branch": "task/state-machine--transition-table--guard-checks--reject-invalid-transition", "affected_worktree_path": "../worktrees/repo/patch--state-machine--transition-table--guard-checks--P001", "merge_target": "task/state-machine--transition-table--guard-checks--reject-invalid-transition", "merge_path": ["patch/state-machine--transition-table--guard-checks--P001", "task/state-machine--transition-table--guard-checks--reject-invalid-transition"], "allowed_files": ["scripts/state_machine.py"], "touched_files": ["scripts/state_machine.py"], "status": "complete"},
         "validation": {"bacon_checks": ["happy path", "negative guard checks"], "bacon_passed": True, "hoare_obligations": ["invalid transitions rejected"], "hoare_passed": True, "epictetus_obligations": ["bad artifacts fail closed"], "epictetus_passed": True, "diogenes_cut_check": "No extra workflow bypass added.", "diogenes_passed": True, "targeted_tests": ["task_slice_complete without docs fails"], "regression_tests": ["happy path"], "tests_passed": True},
+        "correctness": {"lean_proof_required": True, "lean_proof_updated": True, "lean_proof_paths": ["proofs/lean/TheDesignPhilosophers/StateMachine.lean"], "lean_proof_commands": ["cd proofs/lean && lake build"], "lean_proof_passed": True, "lean_proved_obligations": ["happy path reaches accepted", "accepted is terminal"], "runtime_test_checked_obligations": ["Python runtime dispatch behavior"], "non_formal_obligations": ["GitHub API behavior"], "non_formal_reason": "External service behavior is checked operationally, not modeled in Lean."},
         "documentation": {"task_documentation_path": "docs/tasks/T001.md", "task_documentation_updated": True, "patch_documentation_path": "docs/patches/P001.md", "patch_documentation_updated": True, "postmortem_paths": []},
         "remaining_work": {"remaining_task_slices": [], "remaining_patch_tasks": [], "no_remaining_task_slices": True, "no_remaining_patch_tasks": True},
         "changelog": {"repo_changed": False, "required": False, "updated": False, "date_time": "", "scope": "", "summary": "", "commit_or_merge_hash": "", "pending_hash": False, "path": "CHANGELOG.md", "reason": "pure validation fixture"},
@@ -354,7 +391,7 @@ def happy_path():
 
 
 def happy_context():
-    return {"build_package_complete": True, "handoff": valid_handoff(), "empirical_review_passed": True, "correctness_review_passed": True, "operations_review_passed": True, "admission_granted": True}
+    return {"build_package_complete": True, "handoff": valid_handoff(), "empirical_review_passed": True, "operations_review_passed": True, "admission_granted": True}
 
 
 if __name__ == "__main__":
