@@ -27,6 +27,7 @@ For pull-request workflows, use the merge commit hash when available. For direct
 
 | Date & Time | Scope | Summary | Commit/Merge Hash |
 |---|---|---|---|
+| 2026-04-25 19:15:00 -05:00 | Agent packages | Added standalone per-role agent packages, including Hermes, package-local licenses, README documentation, verifier coverage, and CI wiring. | `0bc2d69232568f0ae0b377a2c6d35efe514c0388` |
 | 2026-04-25 18:55:00 -05:00 | AnythingLLM runtime | Folded the Hoare Lean correctness guard into the AnythingLLM base handler and extended verifier coverage so the base handler cannot drift behind the wrapper. | `d1b72fe18ee761c3eb51ef8684ee01618da2d756` |
 | 2026-04-25 18:40:00 -05:00 | Runtime guards | Made `correctness_review_passed` fail closed on Hoare Lean correctness evidence in the Codex, Claude, and AnythingLLM runtimes and expanded verifier coverage for that guard. | `147002d663ca0147dae5533d988c29bd93f02dfa` |
 | 2026-04-25 18:25:00 -05:00 | Correctness workflow | Added Hoare post-build Lean correctness documentation, handoff correctness proof fields, and CI verifier coverage. | `8157502fe15858dc75a7bf967bbb63bd9439d584` |
@@ -89,7 +90,7 @@ For pull-request workflows, use the merge commit hash when available. For direct
 | 2026-04-25 05:24:12 -05:00 | Verification | Added JS loader regression check rejecting path-like action names. | `8a586167c35082b2cde48081443151eb33695557` |
 | 2026-04-25 05:15:57 -05:00 | AnythingLLM docs | Documented AnythingLLM dispatcher loader. | `0c9552e1a731332a054a6b37ca931c3b63394b80` |
 | 2026-04-25 05:15:02 -05:00 | Claude docs | Documented Claude dispatcher loader. | `39e6767eddcfa4f2e929c96efd2a0a2660227159` |
-| 2026-04-25 05:14:23 -05:00 | Codex docs | Documented Codex dispatcher loader. | `0a2a00864046f9cfae4d53bf5151b7d8ecd2f07` |
+| 2026-04-25 05:14:23 -05:00 | Codex docs | Documented Codex dispatcher loader. | `0a2a00864046f9cfae4d53bf5151b7d8ecd2f07b` |
 | 2026-04-25 05:13:14 -05:00 | Repository docs | Documented action dispatcher loader in the root README. | `6f761e14888eff581662d2864ec94c2f77501def` |
 | 2026-04-25 05:12:13 -05:00 | Verification | Updated verifier to check action dispatcher loaders. | `18b1ac66dbffd181dd3860214ecd0b1c82366a10` |
 | 2026-04-25 05:09:56 -05:00 | AnythingLLM runtime | Added AnythingLLM action dispatcher loader operations. | `2a542fd35fa79420096a91fbeefd8515689418b0` |

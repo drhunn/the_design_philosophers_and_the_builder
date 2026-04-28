@@ -36,3 +36,6 @@ jobs:
 
       - name: Verify Hoare Lean correctness rule
         run: python tools/verify_hoare_lean_correctness.py
+
+      - name: Verify standalone agent packages
+        run: python tools/verify_agent_packages.py

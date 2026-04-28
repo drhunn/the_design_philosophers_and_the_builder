@@ -9,6 +9,8 @@ This repository packages the same workflow for four runtimes:
 - Claude Code
 - AnythingLLM
 
+It also provides standalone agent packages for host systems such as OpenClaw that want to install, route, or permission individual roles independently.
+
 Each runtime package is self-contained and can be copied independently.
 
 See [Software Map](docs/architecture/software-map.md) for the repo-level application map of runtime packages, handoff artifacts, verifiers, workflows, proof models, and philosopher-stack ownership.
@@ -24,6 +26,7 @@ Hoare     -> demand correctness
 Epictetus -> demand resilience
 Diogenes  -> remove excess
 Builder   -> implement carefully
+Hermes    -> route handoffs and guard boundaries
 ```
 
 ## Hard Rules
@@ -58,6 +61,28 @@ anythingllm/plugins/agent-skills/the-design-philosophers-and-the-builder/
 ```
 
 Do not install only the main skill file. Copy the whole runtime folder so agents, templates, scripts, license, and local references remain available.
+
+## Standalone Agent Packages
+
+Use these folders when a host runtime needs independent, per-role packages instead of a whole runtime package:
+
+```text
+agent-packages/hermes/
+agent-packages/socrates/
+agent-packages/plato/
+agent-packages/aristotle/
+agent-packages/bacon/
+agent-packages/hoare/
+agent-packages/epictetus/
+agent-packages/diogenes/
+agent-packages/builder-1986/
+```
+
+Each standalone package carries its own `README.md`, `AGENT.md`, and `LICENSE`.
+
+Standalone agent packages do not execute the state machine by themselves. Runtime packages still own dispatcher behavior, handoff validation, runtime-specific installation, and CI wiring.
+
+Hermes is intentionally packaged separately from the philosopher judgment chain. Hermes routes, translates, validates handoffs, checks boundaries, and rejects invalid transitions. Hermes does not decide product goals, architecture, correctness, resilience, austerity, or implementation.
 
 ## Codex Desktop
 
@@ -180,6 +205,8 @@ This is not a Builder-only rule. It applies to Socrates, Plato, Aristotle, Bacon
 18. Hoare verifies correctness.
 19. Epictetus verifies resilience.
 20. The parent admits only if the state machine held.
+
+Hermes is not a judgment step in that chain. Hermes is a host-runtime courier and guard that can route the handoff between those steps.
 
 ## Real-Life Namesakes
 
@@ -540,11 +567,18 @@ python tools\verify_changelog_policy.py
 
 The changelog policy verifier uses Git history in CI to distinguish meaningful repository changes from changelog-only bookkeeping. The GitHub Actions package workflow fetches full history so this diff check can compare pull requests against `main`.
 
-A GitHub Actions workflow runs both verifiers on push and pull request against `main`.
+Run the standalone agent package verifier before treating per-agent package changes as done:
+
+```powershell
+python tools\verify_agent_packages.py
+```
+
+A GitHub Actions workflow runs these verifiers on push and pull request against `main`.
 
 ## Repository Layout
 
 ```text
+agent-packages/       standalone per-role agent packages, including Hermes
 codex-desktop/        canonical Codex Desktop package
 linux/                canonical Linux packages, including Codex CLI AGENTS.md bridge
 claude-code/          canonical Claude Code package
@@ -557,6 +591,8 @@ tools/                package verification and maintenance tools
 
 The three runtime packages are intentionally self-contained. When changing behavior, update all runtime packages or run `tools/verify_packages.py` and fix drift before considering the work complete.
 
+Standalone agent package changes must update `agent-packages/` and pass `tools/verify_agent_packages.py`.
+
 Also update `CHANGELOG.md` for meaningful repository changes. This includes repo-level changes such as documentation, CI workflows, package metadata, proof models, verification scripts, templates, licensing, repository layout, and maintenance policy changes.
 
 Changelog-only edits are bookkeeping cleanup. They do not require another changelog entry and do not need to reference their own PR, merge, or commit hash.
@@ -566,3 +602,5 @@ Changelog-only edits are bookkeeping cleanup. They do not require another change
 This project is licensed under the MIT License. See `LICENSE`.
 
 Each self-contained runtime package also includes its own `LICENSE` file so the MIT copyright and permission notice travels with copied packages.
+
+Each standalone agent package also includes its own `LICENSE` file so the MIT copyright and permission notice travels with copied agents.
